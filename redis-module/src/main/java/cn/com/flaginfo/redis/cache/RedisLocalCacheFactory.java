@@ -3,8 +3,8 @@ package cn.com.flaginfo.redis.cache;
 import cn.com.flaginfo.module.common.domain.LocalCache;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

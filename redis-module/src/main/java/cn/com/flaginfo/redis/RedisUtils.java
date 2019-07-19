@@ -5,7 +5,6 @@ import cn.com.flaginfo.redis.config.selector.RedisSourceSelector;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
-import org.springframework.core.annotation.Order;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisZSetCommands;
@@ -607,7 +606,7 @@ public class RedisUtils {
         listOperations().leftPush(key, list);
     }
 
-    public void addListAll(String key, Collection<Object> list) {
+    public void addListAll(String key, Collection list) {
         listOperations().leftPushAll(key, list);
     }
 
@@ -676,6 +675,13 @@ public class RedisUtils {
      */
     public void addSetValue(String key, Object list) {
         setOperations().add(key, list);
+    }
+
+    public void addSetValue(String key, Collection list) {
+        if( CollectionUtils.isEmpty(list) ){
+            return;
+        }
+        setOperations().add(key, list.toArray());
     }
 
     /**

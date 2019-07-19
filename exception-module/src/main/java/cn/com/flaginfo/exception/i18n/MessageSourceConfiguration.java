@@ -3,6 +3,7 @@ package cn.com.flaginfo.exception.i18n;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import java.util.Locale;
 @Getter
 @Setter
 @ToString
+@Slf4j
 public class MessageSourceConfiguration {
 
     /**
@@ -45,10 +47,13 @@ public class MessageSourceConfiguration {
 
     @Bean
     public MessageSource messageSource(){
+        log.info("load i18n config...");
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
+        Locale.setDefault(defaultLocale);
         List<String> names = new ArrayList<>(baseNames.length + 1);
         Collections.addAll(names, baseNames);
         names.add("classpath:/default-i18n/message");
+        names.add("classpath*:/default-i18n/message");
         String[] newNames = new String[names.size()];
         messageSource.setBasenames(names.toArray(newNames));
         messageSource.setCacheMillis(cacheMills);

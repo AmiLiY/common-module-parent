@@ -2,9 +2,9 @@ package cn.com.flaginfo.module.common.domain;
 
 
 import cn.com.flaginfo.module.common.utils.LocalCacheUtils;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -68,7 +68,7 @@ public class LocalCache {
     }
 
     public LocalCache(String id, long maxCacheSize, long expireTime, TimeUnit timeUnit, CacheLoader<Object, Object> cacheLoader) {
-        this.cache = CacheBuilder
+        this.cache = Caffeine
                 .newBuilder()
                 .maximumSize(maxCacheSize)
                 .expireAfterWrite(expireTime, timeUnit)
@@ -120,7 +120,7 @@ public class LocalCache {
 
     public long size(){
         try {
-            return this.cache.size();
+            return this.cache.estimatedSize();
         }catch (Exception e){
             log.error("cannot get local cache size:{}", this.id);
         }

@@ -45,8 +45,11 @@ public class MessageStore {
         String message = null;
         try {
             message = THIS.messageSource.getMessage(key, null, locale);
+            if(log.isDebugEnabled()){
+                log.debug("get message key:[{}], value:{}, local:{}", key, message, locale);
+            }
         }catch (NoSuchMessageException e){
-            log.error("cannot find the message with key : {}", key);
+            log.error("cannot find the message with key : {}, local: {}", key, locale);
         }
         return null == message ? defaultStr : message;
 

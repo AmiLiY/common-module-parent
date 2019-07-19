@@ -14,6 +14,10 @@ import lombok.Setter;
 public class RedisProperties extends BaseProperties {
 
     /**
+     * redis类型
+     */
+    private RedisType type = RedisType.Jedis;
+    /**
      * 选择库
      */
     private int database;
@@ -29,4 +33,15 @@ public class RedisProperties extends BaseProperties {
      * 服务器密码
      */
     private String password;
+
+    public enum RedisType {
+        /**
+         * jedis
+         */
+        Jedis,
+        /**
+         * lettuce
+         */
+        Lettuce
+    }
 }

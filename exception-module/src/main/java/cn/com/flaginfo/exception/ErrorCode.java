@@ -15,23 +15,23 @@ public enum ErrorCode {
     /**
      * 请求成功
      */
-    SUCCESS(0L, "request.success"),
+    SUCCESS(200L, "request.success"),
     /**
      * 操作成功
      */
-    OPERATION_SUCCESS(0L, "operation.success"),
+    OPERATION_SUCCESS(200L, "operation.success"),
     /**
      * 设置成功
      */
-    SETUP_SUCCESS(0L, "setup.success"),
+    SETUP_SUCCESS(200L, "setup.success"),
     /**
      * 保存成功
      */
-    SAVE_SUCCESS(0L, "save.success"),
+    SAVE_SUCCESS(200L, "save.success"),
     /**
      * 更新成功
      */
-    UPDATE_SUCCESS(0L, "update.success"),
+    UPDATE_SUCCESS(200L, "update.success"),
     /**
      * 系统繁忙
      */

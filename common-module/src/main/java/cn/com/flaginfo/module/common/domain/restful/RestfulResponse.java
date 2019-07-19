@@ -1,6 +1,8 @@
 package cn.com.flaginfo.module.common.domain.restful;
 
 import cn.com.flaginfo.exception.ErrorCode;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,24 +14,28 @@ import java.io.Serializable;
  */
 @Data
 @Slf4j
-public class RestfulResponse implements Serializable {
+@ApiModel(description = "通用Restful响应结构体")
+public class RestfulResponse<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty("请求状态码")
     private Long code;
 
+    @ApiModelProperty("请求响应消息")
     private String message;
 
-    private Object data;
+    @ApiModelProperty("请求结果数据")
+    private T data;
 
     private RestfulResponse() {
     }
 
-    public static class RestfulResponseBuilder{
+    public static class RestfulResponseBuilder<T>{
 
         private Long code;
         private String message;
-        private Object data;
+        private T data;
 
         private RestfulResponseBuilder(){ }
 
@@ -43,25 +49,24 @@ public class RestfulResponse implements Serializable {
             return this;
         }
 
-        public RestfulResponseBuilder setData(Object data){
+        public RestfulResponseBuilder setData(T data){
             this.data = data;
             return this;
         }
 
-        @SuppressWarnings("unchecked")
-        private Object createEmptyData(){
+        private T createEmptyData(){
             log.warn("response is success, but there is no explicit setting of data. this is not recommended.");
-            return (Object) new HttpResponseVO();
+            return null;
         }
 
-        public RestfulResponse build() throws NullPointerException{
+        public RestfulResponse<T> build() throws NullPointerException{
             if( null == this.code ){
                 throw new NullPointerException("response code cannot be null.");
             }
             if(ErrorCode.SUCCESS.code().equals(this.code) && null == this.data ){
                 this.data = this.createEmptyData();
             }
-            RestfulResponse restfulResponse = new RestfulResponse();
+            RestfulResponse<T> restfulResponse = new RestfulResponse<>();
             restfulResponse.setCode(this.code);
             restfulResponse.setData(this.data);
             restfulResponse.setMessage(this.message);
@@ -70,17 +75,19 @@ public class RestfulResponse implements Serializable {
 
     }
 
-    public static  RestfulResponseBuilder builder(){
-        return new RestfulResponseBuilder();
+    public static <T> RestfulResponseBuilder<T> builder(){
+        return new RestfulResponseBuilder<>();
     }
 
-    public static  RestfulResponseBuilder successBuilder(){
-        RestfulResponseBuilder responseBuilder = new RestfulResponseBuilder();
+    @SuppressWarnings("unchecked")
+    public static <T> RestfulResponseBuilder<T> successBuilder(){
+        RestfulResponseBuilder<T> responseBuilder = new RestfulResponseBuilder<>();
         return responseBuilder.setCode(ErrorCode.SUCCESS.code());
     }
 
-    public static RestfulResponseBuilder errorBuilder(){
-        RestfulResponseBuilder responseBuilder = new RestfulResponseBuilder();
+    @SuppressWarnings("unchecked")
+    public static <T> RestfulResponseBuilder<T> errorBuilder(){
+        RestfulResponseBuilder<T> responseBuilder = new RestfulResponseBuilder<>();
         return responseBuilder.setCode(ErrorCode.SYS_BUSY.code());
     }
 }

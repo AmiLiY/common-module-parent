@@ -31,14 +31,9 @@ import java.util.Map;
 @Slf4j
 public class RedisCachePointProcessor {
 
-    private transient volatile LocalCache distributedLockCache = new LocalCache("RedisCachePointProcessorLocal",
-            10000, 3600);
-
-    private final Object[] lock = new Object[0];
-
     private final Object[] formatterLock = new Object[0];
 
-    private static final String DistributedLock = "DistributedLock";
+    private static final String DISTRIBUTED_LOCK = "DistributedLock";
 
     private static final Map<Class<? extends IRedisCacheKeyFormatter>, IRedisCacheKeyFormatter> FORMATTER_CACHE = new HashMap<>();
 
@@ -190,18 +185,8 @@ public class RedisCachePointProcessor {
         if (log.isDebugEnabled()) {
             log.debug("cache expire, single loader will invoke method...");
         }
-        String lockKey = RedisUtils.buildKey(DistributedLock, cacheKey);
-        Object lockObj = distributedLockCache.get(lockKey);
-        if (null == lockObj) {
-            synchronized (lock) {
-                lockObj = distributedLockCache.get(lockKey);
-                if (null == lockObj) {
-                    lockObj = new RedisLockNx(lockKey, redisCache.lockExpire(), redisCache.tryLockTimeout());
-                    distributedLockCache.put(lockKey, lockObj);
-                }
-            }
-        }
-        RedisLockNx lockNx = (RedisLockNx) lockObj;
+        String lockKey = RedisUtils.buildKey(DISTRIBUTED_LOCK, cacheKey);
+        RedisLockNx lockNx = new RedisLockNx(lockKey, redisCache.lockExpire(), redisCache.tryLockTimeout());
         if (!lockNx.lock()) {
             log.error("get lock [{}] timeout, return null.", lockKey);
             return null;

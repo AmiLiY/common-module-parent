@@ -32,6 +32,7 @@
         <module>rpc-common</module>
         <module>rocketmq-module</module>
         <module>reflect-module</module>
+        <module>mysql-module</module>
     </modules>
 
     <dependencies>
@@ -71,9 +72,14 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-parent</artifactId>
-                <version>2.0.5.RELEASE</version>
+                <version>2.1.0.RELEASE</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

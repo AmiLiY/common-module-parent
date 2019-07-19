@@ -4,6 +4,7 @@ import cn.com.flaginfo.redis.RedisMultiTemplateRouting;
 import cn.com.flaginfo.redis.config.properties.RedisPoolProperties;
 import cn.com.flaginfo.redis.config.properties.RedisProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.interceptor.KeyGenerator;
@@ -15,6 +16,8 @@ import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -71,12 +74,16 @@ public abstract class AbstractRedisTemplate extends RedisProperties {
     public Jackson2JsonRedisTemplate instanceRedisTemplate() throws Exception {
         log.info(this.getId() + " init jackson redis template...");
         Jackson2JsonRedisTemplate redisTemplate = new Jackson2JsonRedisTemplate(this.getDatabase());
-        redisTemplate.setConnectionFactory(this.createJedisConnectionFactory(redisPoolProperties));
+        if (RedisType.Lettuce == this.getType()) {
+            redisTemplate.setConnectionFactory(this.createLettuceConnectionFactory(redisPoolProperties));
+        } else {
+            redisTemplate.setConnectionFactory(this.createJedisConnectionFactory(redisPoolProperties));
+        }
         this.registerRedisTemplate(redisTemplate);
         return redisTemplate;
     }
 
-    private JedisConnectionFactory createJedisConnectionFactory(RedisPoolProperties redisPoolProperties){
+    private JedisConnectionFactory createJedisConnectionFactory(RedisPoolProperties redisPoolProperties) {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setDatabase(this.getDatabase());
         redisStandaloneConfiguration.setHostName(this.getHost());
@@ -84,11 +91,25 @@ public abstract class AbstractRedisTemplate extends RedisProperties {
         redisStandaloneConfiguration.setPassword(RedisPassword.of(this.getPassword()));
         //才用连接池后不需要配置timeout
         JedisClientConfiguration.JedisPoolingClientConfigurationBuilder jpb =
-                (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder)JedisClientConfiguration.builder();
-        jpb.poolConfig(this.buildPoolConfig(redisPoolProperties));
+                (JedisClientConfiguration.JedisPoolingClientConfigurationBuilder) JedisClientConfiguration.builder();
+        jpb.poolConfig(this.buildJedisPoolConfig(redisPoolProperties));
         JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration,
                 jpb.build());
         return jedisConnectionFactory;
+    }
+
+    private LettuceConnectionFactory createLettuceConnectionFactory(RedisPoolProperties redisPoolProperties) {
+        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
+        redisStandaloneConfiguration.setDatabase(this.getDatabase());
+        redisStandaloneConfiguration.setHostName(this.getHost());
+        redisStandaloneConfiguration.setPort(this.getPort());
+        redisStandaloneConfiguration.setPassword(RedisPassword.of(this.getPassword()));
+        LettucePoolingClientConfiguration.LettucePoolingClientConfigurationBuilder poolingBuilder = LettucePoolingClientConfiguration.builder();
+        poolingBuilder.poolConfig(this.buildLettucePoolConfig(redisPoolProperties));
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(redisStandaloneConfiguration, poolingBuilder.build());
+        factory.setValidateConnection(true);
+        factory.afterPropertiesSet();
+        return factory;
     }
 
     /**
@@ -97,8 +118,24 @@ public abstract class AbstractRedisTemplate extends RedisProperties {
      * @param redisPoolProperties
      * @return
      */
-    private JedisPoolConfig buildPoolConfig(RedisPoolProperties redisPoolProperties) {
+    private JedisPoolConfig buildJedisPoolConfig(RedisPoolProperties redisPoolProperties) {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxIdle(redisPoolProperties.getMaxIdle());
+        poolConfig.setMinIdle(redisPoolProperties.getMinIdle());
+        poolConfig.setMaxTotal(redisPoolProperties.getMaxActive());
+        poolConfig.setMaxWaitMillis(redisPoolProperties.getMaxWait());
+        poolConfig.setTestOnBorrow(redisPoolProperties.isTestOnBorrow());
+        return poolConfig;
+    }
+
+    /**
+     * 设置连接池属性
+     *
+     * @param redisPoolProperties
+     * @return
+     */
+    private GenericObjectPoolConfig buildLettucePoolConfig(RedisPoolProperties redisPoolProperties) {
+        GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
         poolConfig.setMaxIdle(redisPoolProperties.getMaxIdle());
         poolConfig.setMinIdle(redisPoolProperties.getMinIdle());
         poolConfig.setMaxTotal(redisPoolProperties.getMaxActive());

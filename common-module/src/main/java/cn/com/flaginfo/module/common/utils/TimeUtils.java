@@ -85,6 +85,16 @@ public class TimeUtils {
         return LocalDateTime.ofInstant(instant, zone);
     }
 
+    public static String timestamp2DateStr(long time) {
+        return timestamp2DateStr(time, "yyyy-MM-dd HH:mm:ss");
+    }
+
+    public static String timestamp2DateStr(long time, String pattern) {
+        DateTimeFormatter ftf = DateTimeFormatter.ofPattern(pattern);
+        return ftf.format(LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault()));
+
+    }
+
     /**
      * 获取当前时间到24点的毫秒数
      * @return

@@ -13,15 +13,13 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
  * 从Diamond配置中心初始化数据
+ *
  * @author Meng.Liu
  * @create 2017-09-26 10:55
  **/
@@ -34,12 +32,12 @@ public class DiamondProperties extends DynamicProperties {
 
     private static PropertiesPropertySource diamondProperties = new PropertiesPropertySource(CONFIG_KEY, new Properties());
 
-    private DiamondProperties(){
+    private DiamondProperties() {
         super();
     }
 
-    protected static DynamicProperties init(ConfigurableEnvironment cenv){
-        if( log.isDebugEnabled() ){
+    protected static DynamicProperties init(ConfigurableEnvironment cenv) {
+        if (log.isDebugEnabled()) {
             log.debug("init Diamond Properties...");
         }
         Assert.notNull(cenv);
@@ -55,7 +53,6 @@ public class DiamondProperties extends DynamicProperties {
     }
 
     /**
-     *
      * @return
      */
     public ConfigurableEnvironment getEnv() {
@@ -63,37 +60,50 @@ public class DiamondProperties extends DynamicProperties {
     }
 
     @Override
-    public Map<String,Object> getAllConfig() {
+    public Map<String, Object> getAllConfig() {
         MutablePropertySources propertySources = env.getPropertySources();
-        MapPropertySource ps = (MapPropertySource)propertySources.get(CONFIG_KEY);
-        if(ps == null){
-            return null;
+        MapPropertySource ps = (MapPropertySource) propertySources.get(CONFIG_KEY);
+        if (ps == null) {
+            return Collections.emptyMap();
         }
         return ps.getSource();
     }
 
-    private void init(){
-
+    private void init() {
+        String enabledDiamond = env.getProperty("enabled-diamond", "true");
+        if (!Boolean.valueOf(enabledDiamond)) {
+            log.info("diamond is disabled.");
+            return;
+        }
         final String propGroup = env.getProperty("prop_group");
         final String propDataId = env.getProperty("prop_data_id");
-//        读取全局配置
-//        initDiamond(propGroup,"global-prop");
+        String enabledGlobalProp = env.getProperty("enabled-global-prop", "false");
+        if (Boolean.valueOf(enabledGlobalProp)) {
+            final String globalPropGroup = env.getProperty("global_prop_group", propGroup);
+            final String globalPropDataId = env.getProperty("global_prop_data_id", "global-prop");
+            log.info("init diamond global prop with group {}, prop {}.", globalPropGroup, globalPropDataId);
+            //读取全局配置
+            initDiamond(globalPropGroup, globalPropDataId);
+            return;
+        }
+        log.info("init diamond prop with group {}, prop {}.", propGroup, propDataId);
         //读取服务配置信息
-        initDiamond(propGroup,propDataId);
+        initDiamond(propGroup, propDataId);
     }
 
-    public void initDiamond(String propGroup,String propDataId){
-        if( log.isDebugEnabled() ){
-            log.debug("load Diamond Properties. group : [{}], propDataId : [{}]", propGroup, propDataId );
+    public void initDiamond(String propGroup, String propDataId) {
+        if (log.isDebugEnabled()) {
+            log.debug("load Diamond Properties. group : [{}], propDataId : [{}]", propGroup, propDataId);
         }
-        DiamondManager manager = new DefaultDiamondManager(propGroup,propDataId,new ManagerListener(){
+        DiamondManager manager = new DefaultDiamondManager(propGroup, propDataId, new ManagerListener() {
             @Override
             public Executor getExecutor() {
                 return null;
             }
+
             @Override
             public void receiveConfigInfo(String configInfo) {
-                if( log.isDebugEnabled() ){
+                if (log.isDebugEnabled()) {
                     log.info("Receive Diamond configInfo : [{}]", configInfo);
                 }
                 updateData(configInfo);
@@ -104,22 +114,21 @@ public class DiamondProperties extends DynamicProperties {
 
 
     /**
-     *
      * @param key
      * @return
      */
     @Override
-    public String getProperty(String key){
+    public String getProperty(String key) {
         try {
             return env.getProperty(key);
         } catch (Exception e) {
-           log.error("", e);
+            log.error("", e);
         }
         return null;
     }
 
     @Override
-    public String getProperty(String key, String defaultVal){
+    public String getProperty(String key, String defaultVal) {
         try {
             return env.getProperty(key, defaultVal);
         } catch (Exception e) {
@@ -129,10 +138,10 @@ public class DiamondProperties extends DynamicProperties {
     }
 
 
-    private void updateData(String data){
+    private void updateData(String data) {
         preData.clear();
         Map<String, Object> current = this.getAllConfig();
-        if(!CollectionUtils.isEmpty(current)){
+        if (!CollectionUtils.isEmpty(current)) {
             preData.putAll(current);
         }
         Properties properties = getPropertiesForString(data);
@@ -146,7 +155,9 @@ public class DiamondProperties extends DynamicProperties {
 
     private Properties getPropertiesForString(String configInfo) {
         Properties p = new Properties();
-        if(configInfo == null){ return p;}
+        if (configInfo == null) {
+            return p;
+        }
         try {
             p.load(new StringReader(configInfo));
         } catch (IOException e) {
@@ -155,89 +166,88 @@ public class DiamondProperties extends DynamicProperties {
         return p;
     }
 
-    private Map<String,Object> getAllConfig(Properties prop) {
+    private Map<String, Object> getAllConfig(Properties prop) {
         Set<Entry<Object, Object>> set = prop.entrySet();
-        Map<String,Object> allMap = new HashMap<String,Object>();
+        Map<String, Object> allMap = new HashMap<String, Object>();
         for (Entry<Object, Object> e : set) {
-            allMap.put((String)e.getKey(), e.getValue());
+            allMap.put((String) e.getKey(), e.getValue());
         }
         return allMap;
     }
 
 
     /**
-     *
      * @param s
      * @param defVal
      * @return
      */
     @Deprecated
-    public static Integer getPropertyInteger(String s, Integer defVal){
+    public static Integer getPropertyInteger(String s, Integer defVal) {
         Integer val = getPropertyInteger(s);
         return null == val ? defVal : val;
     }
 
     @Deprecated
-    public static Integer getPropertyInteger(String s){
+    public static Integer getPropertyInteger(String s) {
         try {
             return Integer.valueOf(getPropertyString(s));
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
 
     @Deprecated
-    public static Long getPropertyLong(String s, Long defVal){
+    public static Long getPropertyLong(String s, Long defVal) {
         Long val = getPropertyLong(s);
         return null == val ? defVal : val;
     }
 
     @Deprecated
-    public static Long getPropertyLong(String s){
+    public static Long getPropertyLong(String s) {
         try {
             return Long.valueOf(getPropertyString(s));
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
 
     @Deprecated
-    public static Double getPropertyDouble(String s, Double defVal){
+    public static Double getPropertyDouble(String s, Double defVal) {
         Double val = getPropertyDouble(s);
         return null == val ? defVal : val;
     }
 
     @Deprecated
-    public static Double getPropertyDouble(String s){
+    public static Double getPropertyDouble(String s) {
         try {
             return Double.valueOf(getPropertyString(s));
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
 
     @Deprecated
-    public static Boolean getPropertyBoolean(String s, Boolean defVal){
+    public static Boolean getPropertyBoolean(String s, Boolean defVal) {
         Boolean val = getPropertyBoolean(s);
         return null == val ? defVal : val;
     }
 
     @Deprecated
-    public static Boolean getPropertyBoolean(String s){
+    public static Boolean getPropertyBoolean(String s) {
         try {
             return Boolean.valueOf(getPropertyString(s));
-        }catch (Exception e){
+        } catch (Exception e) {
             return null;
         }
     }
 
     @Deprecated
-    public static String getPropertyString(String s, String defVal){
+    public static String getPropertyString(String s, String defVal) {
         return env.getProperty(s, defVal);
     }
 
     @Deprecated
-    public static String getPropertyString(String s){
+    public static String getPropertyString(String s) {
         return env.getProperty(s);
     }
 

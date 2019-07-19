@@ -21,7 +21,7 @@ public class RestfulResponseUtils {
      * @return
      */
     public static RestfulResponse success() {
-        return success(HttpResponseVO.emptyHttpResponseVO());
+        return success(emptyHttpResponseVO());
     }
 
     /**
@@ -30,7 +30,7 @@ public class RestfulResponseUtils {
      * @return
      */
     public static RestfulResponse operationSuccess() {
-        return success(HttpResponseVO.emptyHttpResponseVO(), ErrorCode.OPERATION_SUCCESS.message());
+        return success(emptyHttpResponseVO(), ErrorCode.OPERATION_SUCCESS.message());
     }
 
     /**
@@ -39,7 +39,7 @@ public class RestfulResponseUtils {
      * @return
      */
     public static RestfulResponse setupSuccess() {
-        return success(HttpResponseVO.emptyHttpResponseVO(), ErrorCode.SETUP_SUCCESS.message());
+        return success(emptyHttpResponseVO(), ErrorCode.SETUP_SUCCESS.message());
     }
 
     /**
@@ -48,7 +48,7 @@ public class RestfulResponseUtils {
      * @return
      */
     public static RestfulResponse saveSuccess() {
-        return success(HttpResponseVO.emptyHttpResponseVO(), ErrorCode.SAVE_SUCCESS.message());
+        return success(emptyHttpResponseVO(), ErrorCode.SAVE_SUCCESS.message());
     }
     
     /**
@@ -57,7 +57,7 @@ public class RestfulResponseUtils {
      * @return
      */
     public static RestfulResponse updateSuccess() {
-        return success(HttpResponseVO.emptyHttpResponseVO(), ErrorCode.UPDATE_SUCCESS.message());
+        return success(emptyHttpResponseVO(), ErrorCode.UPDATE_SUCCESS.message());
     }
     
     /**
@@ -66,7 +66,7 @@ public class RestfulResponseUtils {
      * @param data
      * @return
      */
-    public static RestfulResponse success(Object data) {
+    public static <T> RestfulResponse<T> success(T data) {
         return success(data, ErrorCode.SUCCESS.message());
     }
 
@@ -77,9 +77,10 @@ public class RestfulResponseUtils {
      * @param message
      * @return
      */
-    public static RestfulResponse success(Object data, String message) {
-        RestfulResponse.RestfulResponseBuilder responseBuilder = RestfulResponse.successBuilder();
-        return responseBuilder.setData(data)
+    @SuppressWarnings("unchecked")
+    public static <T> RestfulResponse<T> success(T data, String message) {
+        RestfulResponse.RestfulResponseBuilder<T> responseBuilder = RestfulResponse.successBuilder();
+        return (RestfulResponse<T>)responseBuilder.setData(data)
                 .setMessage(message).build();
     }
 
@@ -102,7 +103,7 @@ public class RestfulResponseUtils {
      * @param message
      * @return
      */
-    public static RestfulResponse success(List<Object> data, int dataCount, String message) {
+    public static <T> RestfulResponse<T> success(List<Object> data, int dataCount, String message) {
         PageResponseVO<List<Object>> responseVO = new PageResponseVO<>();
         responseVO.setData(data);
         responseVO.setDataCount(dataCount);
@@ -117,7 +118,7 @@ public class RestfulResponseUtils {
      * @param restfulCode
      * @return
      */
-    public static RestfulResponse error(ErrorCode restfulCode) {
+    public static <T> RestfulResponse<T> error(ErrorCode restfulCode) {
         return error(restfulCode.code(), restfulCode.message());
     }
 
@@ -127,7 +128,7 @@ public class RestfulResponseUtils {
      * @param message
      * @return
      */
-    public static RestfulResponse error(String message) {
+    public static <T> RestfulResponse<T> error(String message) {
         return error(ErrorCode.SYS_BUSY.code(), message);
     }
 
@@ -138,8 +139,9 @@ public class RestfulResponseUtils {
      * @param message
      * @return
      */
-    public static RestfulResponse error(long code, String message) {
-        return RestfulResponse.builder()
+    @SuppressWarnings("unchecked")
+    public static <T> RestfulResponse<T> error(long code, String message) {
+        return (RestfulResponse<T>)RestfulResponse.builder()
                 .setCode(code)
                 .setMessage(message)
                 .build();
@@ -156,5 +158,54 @@ public class RestfulResponseUtils {
             return false;
         }
         return ErrorCode.SUCCESS.code().equals(restfulResponse.getCode());
+    }
+
+
+    private static final HttpResponseVO EMPTY_HTTP_RESPONSE_VO = new EmptyHttpResponseVO<>();
+
+    /**
+     * 获取空数据对象
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> HttpResponseVO<T> emptyHttpResponseVO(){
+        return (HttpResponseVO<T>)EMPTY_HTTP_RESPONSE_VO;
+    }
+
+    /**
+     * 空数据对象
+     * @author: Meng.Liu
+     * @date: 2018/11/9 下午3:04
+     */
+    private static class EmptyHttpResponseVO<T> extends HttpResponseVO<T> {
+
+        @Override
+        public String toString() {
+            return this.getClass().getName() + ":[Empty Data]";
+        }
+
+        /**
+         * 是否为空
+         * @return
+         */
+        public boolean isEmpty(){
+            return true;
+        }
+
+        /**
+         * 是否为空
+         * @return
+         */
+        public boolean isNull(){
+            return true;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if( null == obj ){
+                return true;
+            }
+            return obj instanceof EmptyHttpResponseVO;
+        }
     }
 }

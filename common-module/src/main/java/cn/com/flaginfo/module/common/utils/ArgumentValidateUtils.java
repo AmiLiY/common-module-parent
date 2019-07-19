@@ -2,6 +2,7 @@ package cn.com.flaginfo.module.common.utils;
 
 
 import cn.com.flaginfo.exception.common.ArgumentException;
+import cn.com.flaginfo.module.reflect.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
@@ -29,29 +30,19 @@ public class ArgumentValidateUtils {
     }
 
     public static void argumentRequire(Object obj, String[] args, String errmsg) throws ArgumentException {
-        if( null == obj){
+        if (null == obj) {
             throw new ArgumentException(DEFAULT_NULL_MSG);
         }
-        if( null == args || args.length == 0 ){
+        if (null == args || args.length == 0) {
             return;
         }
-        String fieldName = "";
-        try {
-            Field field;
-            Object value;
-            for(String s : args ){
-                fieldName = s;
-                field = obj.getClass().getDeclaredField(s);
-                field.setAccessible(true);
-                value = field.get(obj);
-                if( null == value){
-                    throw new ArgumentException(MessageFormat.format(errmsg, s));
-                }
+        Object value;
+        for (String s : args) {
+            value = ReflectionUtils.getFieldValue(obj, s);
+            if (null == value) {
+                throw new ArgumentException(MessageFormat.format(errmsg, s));
             }
-        } catch (NoSuchFieldException e) {
-            throw new ArgumentException("Cannot find this field ["+ fieldName +"] from class [" + obj.getClass().getSimpleName() + "]");
-        } catch (IllegalAccessException e) {
-            throw new ArgumentException("Cannot check this field ["+ fieldName +"] value from class [" + obj.getClass().getSimpleName() + "], Illegal Access");
         }
+
     }
 }

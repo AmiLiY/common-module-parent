@@ -136,10 +136,9 @@ public class RedisLockNx extends AbstractRedisLock {
         while ((System.nanoTime() - nowTime) < timeout) {
             expires = System.currentTimeMillis() + expireTime * 1000 + 1 * 1000;
             String expiresStr = String.valueOf(expires);
-            Boolean bool = operationForValue().setIfAbsent(lockKey, expiresStr);
+            Boolean bool = operationForValue().setIfAbsent(lockKey, expiresStr, expireTime, TimeUnit.SECONDS);
             if (BooleanUtils.isTrue(bool)) {
                 locked = true;
-                redisTemplate.expire(lockKey, expireTime, TimeUnit.SECONDS);
                 return true;
             }
             String currentValueStr = String.valueOf(operationForValue().get(lockKey));
