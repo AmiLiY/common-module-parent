@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationContextInitializer=\
+    cn.com.flaginfo.module.common.diamond.DiamondPropertiesInitializer
