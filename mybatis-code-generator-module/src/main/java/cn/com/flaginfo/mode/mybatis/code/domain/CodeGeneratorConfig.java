@@ -116,7 +116,7 @@ public class CodeGeneratorConfig {
         this.servicePath = StringUtils.isBlank(servicePath) ? "service" : servicePath;
         this.serviceImplPath = StringUtils.isBlank(serviceImplPath) ? "service.impl" : serviceImplPath;
         this.mapperPath = StringUtils.isBlank(mapperPath) ? packageName + "mapper" : mapperPath;
-        this.mapperXmlPath = StringUtils.isBlank(mapperXmlPath) ? "mapper" : mapperPath;
+        this.mapperXmlPath = StringUtils.isBlank(mapperXmlPath) ? "mapper" : mapperXmlPath;
 
         this.superEntityColumns = superEntityColumns;
 
