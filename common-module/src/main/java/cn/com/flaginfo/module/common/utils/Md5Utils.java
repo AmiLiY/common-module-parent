@@ -15,20 +15,14 @@ import java.security.MessageDigest;
 @Slf4j
 public class Md5Utils {
 
-    public static String encode(String str){
-        if(StringUtils.isBlank(str)){
+    public static String encrypt(String str) throws Exception {
+        if (StringUtils.isBlank(str)) {
             return "";
         }
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("md5");
-            md5.update(str.getBytes(StandardCharsets.UTF_8));
-            byte[] md5Bytes = md5.digest();
-            return Base64.encodeBase64String(md5Bytes);
-        } catch (Exception e) {
-            log.error("", e);
-        }
-        return "";
+        MessageDigest md5 = MessageDigest.getInstance("md5");
+        md5.update(str.getBytes(StandardCharsets.UTF_8));
+        byte[] md5Bytes = md5.digest();
+        return Base64.encodeBase64String(md5Bytes);
     }
 
 }

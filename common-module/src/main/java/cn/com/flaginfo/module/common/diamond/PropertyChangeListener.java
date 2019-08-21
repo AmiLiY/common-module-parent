@@ -1,6 +1,7 @@
 package cn.com.flaginfo.module.common.diamond;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Meng.Liu
@@ -18,7 +19,7 @@ public abstract class PropertyChangeListener {
      * 注册监听的属性的key
      * @return
      */
-    public abstract String[] register();
+    public abstract Set<String> register();
 
     /**
      * 当属性值变化时执行该方法
@@ -27,5 +28,5 @@ public abstract class PropertyChangeListener {
      * @param allConfig
      * @param key
      */
-    public abstract void change(String key, Object oldValue, Object newValue, Map<String,Object> allConfig);
+    public abstract void change(String key, Object oldValue, String newValue, Map<String,Object> allConfig);
 }

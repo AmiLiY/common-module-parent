@@ -1,6 +1,6 @@
 package cn.com.flaginfo.exception.restful;
 
-import cn.com.flaginfo.exception.ErrorCode;
+import cn.com.flaginfo.exception.Error;
 
 /**
  * @author: Meng.Liu
@@ -17,8 +17,8 @@ public class RestfulException extends Exception{
      */
     private long code;
 
-    public RestfulException(ErrorCode restfulCode){
-        this(restfulCode.code(), restfulCode.message());
+    public RestfulException(Error error){
+        this(error.code(), error.message());
     }
 
     public RestfulException(String msg){

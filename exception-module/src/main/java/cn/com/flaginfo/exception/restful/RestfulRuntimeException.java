@@ -1,6 +1,6 @@
 package cn.com.flaginfo.exception.restful;
 
-import cn.com.flaginfo.exception.ErrorCode;
+import cn.com.flaginfo.exception.Error;
 
 /**
  * @author: Meng.Liu
@@ -13,9 +13,9 @@ public class RestfulRuntimeException extends RuntimeException {
      */
     private long code;
 
-    public RestfulRuntimeException(ErrorCode restfulCode){
-        super(restfulCode.message());
-        this.code = restfulCode.code();
+    public RestfulRuntimeException(Error error){
+        super(error.message());
+        this.code = error.code();
     }
 
     public RestfulRuntimeException(long code, String msg){

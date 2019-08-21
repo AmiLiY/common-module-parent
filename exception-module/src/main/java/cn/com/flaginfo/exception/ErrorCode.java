@@ -9,7 +9,7 @@ import cn.com.flaginfo.exception.i18n.MessageStore;
  * @author: Meng.Liu
  * @date: 2018/12/17 上午10:52
  */
-public enum ErrorCode {
+public enum ErrorCode implements Error{
 
     //restful错误码
     /**
@@ -378,6 +378,10 @@ public enum ErrorCode {
      * 图片尺寸太小
      */
     IMAGE_SIZE_TOO_SMALL(400088L, "image.size.too.small"),
+    /**
+     * 缺少必要请求参数
+     */
+    LACK_REQUIRED_PARAMETER(400089L, "lack.required.parameter"),
 
     //restful请求头错误码
     /**

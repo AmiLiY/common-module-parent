@@ -141,7 +141,13 @@ public class RedisLockNx extends AbstractRedisLock {
                 locked = true;
                 return true;
             }
-            String currentValueStr = String.valueOf(operationForValue().get(lockKey));
+            Object oldValue = operationForValue().get(lockKey);
+            String currentValueStr;
+            if( null == oldValue ){
+                currentValueStr = null;
+            }else{
+                currentValueStr = String.valueOf(oldValue);
+            }
             if (currentValueStr != null && Long.parseLong(currentValueStr) < System.currentTimeMillis()) {
                 String oldValueStr = String.valueOf(operationForValue().getAndSet(lockKey, expiresStr));
                 if (oldValueStr != null && oldValueStr.equals(currentValueStr)) {

@@ -1,5 +1,6 @@
 package cn.com.flaginfo.rpc.common.configuration;
 
+import cn.com.flaginfo.module.common.diamond.DiamondPropertyChangeListenerAdapter;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
@@ -14,11 +15,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "spring.app.rpc")
 @Getter
 @Setter
-public class RpcConfiguration {
-
-    public static final String SLOW_THRESHOLD_CONF = "spring.app.rpc.slow.threshold";
-
-    public static final String LOG_LEVEL_CONF = "spring.app.rpc.log.level";
+public class RpcConfiguration extends DiamondPropertyChangeListenerAdapter {
 
     /**
      * rpc慢查询阈值，单位ms

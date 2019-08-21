@@ -3,6 +3,7 @@ package cn.com.flaginfo.module.common.diamond;
 import ch.qos.logback.classic.Level;
 import cn.com.flaginfo.module.common.utils.LogUtils;
 import cn.com.flaginfo.module.common.utils.ThreadMdcUtil;
+import org.springframework.util.CollectionUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -72,8 +73,8 @@ public abstract class DynamicProperties {
 
     public void messageChange() {
         for (PropertyChangeListener cl : changeListeners) {
-            String keys[] = cl.register();
-            if (keys == null) {
+            Set<String> keys = cl.register();
+            if (CollectionUtils.isEmpty(keys)) {
                 break;
             }
             for (String key : keys) {

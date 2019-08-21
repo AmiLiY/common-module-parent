@@ -36,12 +36,12 @@ import javax.net.ssl.SSLHandshakeException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author meng.liu
@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class HttpClientPoolUtil {
 
-    private static final AtomicInteger number = new AtomicInteger(1);
+    private String componentId;
 
     private HttpClientPoolConfig config;
 
@@ -67,22 +67,25 @@ public class HttpClientPoolUtil {
     }
 
     /**
-     * 使用默认参数初始化连接池
-     */
-    public HttpClientPoolUtil() {
-        this.config = HttpClientPoolConfig.builder().build();
-    }
-
-    /**
      * 使用置顶配置初始化连接池
      *
      * @param config
      */
     public HttpClientPoolUtil(HttpClientPoolConfig config) {
+        this();
         if (null == config) {
-            throw new IllegalArgumentException("the config form http client pool cannot be null.");
+           log.warn("the parameter which named HttpClientPoolConfig is null, will be init HttpClientPoolUtil with default config.");
+        }else{
+            this.config = config;
         }
-        this.config = config;
+    }
+
+    /**
+     * 使用默认参数初始化连接池
+     */
+    public HttpClientPoolUtil() {
+        this.config = HttpClientPoolConfig.builder().build();
+        this.componentId = UUID.randomUUID().toString();
     }
 
     /**
@@ -117,7 +120,11 @@ public class HttpClientPoolUtil {
             synchronized (syncLock) {
                 if (httpClient == null) {
                     httpClient = this.createHttpClient(url);
-                    monitorExecutor = Executors.newSingleThreadScheduledExecutor(runnable -> new Thread(runnable, "Http-Client-Pool-Monitor-" + number.getAndIncrement()));
+                    monitorExecutor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+                        Thread thread = new Thread(runnable, "Http-Client-Pool-Monitor-" + this.componentId);
+                        thread.setDaemon(true);
+                        return thread;
+                    });
                     monitorExecutor.scheduleAtFixedRate(() -> {
                         manager.closeExpiredConnections();
                         manager.closeIdleConnections(config.getIdleTimeout(), TimeUnit.SECONDS);
@@ -279,7 +286,7 @@ public class HttpClientPoolUtil {
      * @return
      */
     public Response get(String url) {
-        return this.get(url, null);
+        return this.get(url, (Map<String, String>) null);
     }
 
     /**
@@ -413,11 +420,26 @@ public class HttpClientPoolUtil {
         return this.doRequest(url, request, header);
     }
 
+    public Response post(String url, HttpPost post ){
+        return this.doRequest(url, post);
+    }
+
+    public Response get(String url, HttpGet get ){
+        return this.doRequest(url, get);
+    }
+
     private Response doRequest(String url, HttpRequestBase request, Map<String, String> header) {
+        this.setupRequestConfig(request);
+        this.setupRequestHeader(request, header);
+        return this.doRequest(url, request);
+    }
+
+    public Response doRequest(String url, HttpRequestBase request ){
         CloseableHttpResponse response = null;
         try {
-            this.setupRequestConfig(request);
-            this.setupRequestHeader(request, header);
+            if( null == request.getURI() ){
+                request.setURI(URI.create(url));
+            }
             response = this.getHttpClient(url)
                     .execute(request, HttpClientContext.create());
             StatusLine responseState = response.getStatusLine();
@@ -450,6 +472,7 @@ public class HttpClientPoolUtil {
      * 关闭连接池
      */
     public void closeConnectionPool() {
+        log.warn("the HttpClientPoolUtil that id is {} will be close now.", this.componentId);
         try {
             httpClient.close();
             manager.close();

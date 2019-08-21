@@ -26,29 +26,35 @@ public class MessageStore {
     private static MessageStore THIS;
 
     @PostConstruct
-    private void init(){
+    private void init() {
         MessageStore.THIS = this;
     }
 
-    public static String getMessage(String key){
+    public static String getMessage(String key) {
         return getMessage(LocaleHolder.get(), key);
     }
 
-    public static String getMessage(Locale locale, String key){
-        return getMessage(locale, key, "[" + key + "]");
+    public static String getMessage(Locale locale, String key) {
+        return getMessage(locale, key, key);
     }
 
-    public static String getMessage(Locale locale, String key, String defaultStr){
-        if( null == locale ){
+    public static String getMessage(Locale locale, String key, String defaultStr) {
+        if( null == THIS || null == THIS.messageSourceConfiguration || null == THIS.messageSource ){
+            if (log.isDebugEnabled()) {
+                log.debug("message store is not init...");
+            }
+            return defaultStr;
+        }
+        if (null == locale) {
             locale = THIS.messageSourceConfiguration.getDefaultLocale();
         }
         String message = null;
         try {
             message = THIS.messageSource.getMessage(key, null, locale);
-            if(log.isDebugEnabled()){
+            if (log.isDebugEnabled()) {
                 log.debug("get message key:[{}], value:{}, local:{}", key, message, locale);
             }
-        }catch (NoSuchMessageException e){
+        } catch (NoSuchMessageException e) {
             log.error("cannot find the message with key : {}, local: {}", key, locale);
         }
         return null == message ? defaultStr : message;

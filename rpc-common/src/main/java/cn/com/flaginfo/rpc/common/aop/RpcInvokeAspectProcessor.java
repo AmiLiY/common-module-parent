@@ -1,8 +1,6 @@
 package cn.com.flaginfo.rpc.common.aop;
 
 import cn.com.flaginfo.exception.rpc.RpcRuntimeException;
-import cn.com.flaginfo.module.common.diamond.DiamondProperties;
-import cn.com.flaginfo.module.common.diamond.PropertyChangeListener;
 import cn.com.flaginfo.rpc.common.configuration.RpcConfiguration;
 import cn.com.flaginfo.rpc.common.domain.RpcLogInfo;
 import cn.com.flaginfo.rpc.common.service.IRpcSlowlyHandle;
@@ -21,10 +19,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
-import java.util.Map;
-
-import static cn.com.flaginfo.rpc.common.configuration.RpcConfiguration.LOG_LEVEL_CONF;
-import static cn.com.flaginfo.rpc.common.configuration.RpcConfiguration.SLOW_THRESHOLD_CONF;
 
 /**
  * @author: Meng.Liu
@@ -46,30 +40,6 @@ public class RpcInvokeAspectProcessor {
         if (null == rpcConfiguration) {
             rpcConfiguration = new RpcConfiguration();
         }
-        try {
-            this.loadConfigListen();
-        } catch (Exception e) {
-            log.warn("cannot find class [DiamondProperties.class], the log level cannot be config at the runtime.");
-        }
-
-    }
-
-    private void loadConfigListen() {
-        DiamondProperties.addChangeListener(new PropertyChangeListener() {
-            @Override
-            public String[] register() {
-                return new String[]{SLOW_THRESHOLD_CONF, LOG_LEVEL_CONF};
-            }
-
-            @Override
-            public void change(String key, Object oldValue, Object newValue, Map<String, Object> allConfig) {
-                if (key.equals(SLOW_THRESHOLD_CONF)) {
-                    rpcConfiguration.setSlowThreshold(Long.valueOf(newValue.toString()));
-                } else if (key.equals(LOG_LEVEL_CONF)) {
-                    rpcConfiguration.setLogLevel(RpcConfiguration.ofName(newValue.toString()));
-                }
-            }
-        });
     }
 
     @Pointcut("@within(cn.com.flaginfo.rpc.common.aop.RpcInterface)")

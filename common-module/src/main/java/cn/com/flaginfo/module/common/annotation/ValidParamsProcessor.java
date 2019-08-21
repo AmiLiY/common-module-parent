@@ -58,7 +58,7 @@ public class ValidParamsProcessor {
     public RestfulResponse validErrorResult(String objectName, String property, String messageTemplate) {
         ErrorCode restfulCode = ErrorCode.getErrorCode(messageTemplate);
         if (null != restfulCode) {
-            log.error("valid params error. code : {}, message : {}", restfulCode.code(), restfulCode.message());
+            log.error("valid params error. field:[{}], code:[{}], message:[{}]", property, restfulCode.code(), restfulCode.message());
             return RestfulResponseUtils.error(restfulCode);
         } else {
             log.error("unknown error : class:[{}], field:[{}], errorCode:[{}]", objectName, property, messageTemplate);

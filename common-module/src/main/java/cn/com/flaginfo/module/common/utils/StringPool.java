@@ -10,6 +10,7 @@ package cn.com.flaginfo.module.common.utils;
  */
 public interface StringPool {
 
+    String BLANK = "";
     String AMPERSAND = "&";
     String AND = "and";
     String AT = "@";

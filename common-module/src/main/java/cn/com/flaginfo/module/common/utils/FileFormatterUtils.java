@@ -3,18 +3,7 @@ package cn.com.flaginfo.module.common.utils;
 import cn.com.flaginfo.exception.ErrorCode;
 import cn.com.flaginfo.exception.restful.RestfulException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-
-import javax.imageio.*;
-import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
-import javax.imageio.stream.MemoryCacheImageOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Iterator;
 
 /**
  * @author: Meng.Liu
