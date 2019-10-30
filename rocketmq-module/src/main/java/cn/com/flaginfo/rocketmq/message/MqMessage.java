@@ -34,7 +34,7 @@ public interface MqMessage {
 	 *
 	 * @return
 	 */
-	String getTags();
+	String getTag();
 
 	/**
 	 *

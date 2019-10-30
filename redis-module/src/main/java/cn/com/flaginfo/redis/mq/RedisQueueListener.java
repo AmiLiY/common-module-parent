@@ -32,7 +32,7 @@ public @interface RedisQueueListener {
      *
      * @return
      */
-    long timeout() default 600;
+    long timeout() default 10;
 
     /**
      * 超时时长单位

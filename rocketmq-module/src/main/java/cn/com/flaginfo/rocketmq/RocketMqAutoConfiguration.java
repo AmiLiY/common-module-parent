@@ -1,32 +1,27 @@
 package cn.com.flaginfo.rocketmq;
 
-import cn.com.flaginfo.module.common.diamond.DiamondProperties;
-import cn.com.flaginfo.module.common.utils.ClassScannerUtils;
+import cn.com.flaginfo.module.common.SpringApplicationStartedEvent;
+import cn.com.flaginfo.rocketmq.boot.AbstractConsumerBoot;
 import cn.com.flaginfo.rocketmq.boot.OnsConsumerBoot;
-import cn.com.flaginfo.rocketmq.boot.RocketMqPullConsumerBoot;
-import cn.com.flaginfo.rocketmq.boot.RocketMqPushConsumerBoot;
-import cn.com.flaginfo.rocketmq.config.MqType;
-import cn.com.flaginfo.rocketmq.config.OnsMqConfig;
-import cn.com.flaginfo.rocketmq.config.RocketMqConfig;
-import cn.com.flaginfo.rocketmq.consumer.MqConsumerLoader;
+import cn.com.flaginfo.rocketmq.boot.RocketMqConsumerBoot;
+import cn.com.flaginfo.rocketmq.config.MqConfiguration;
 import cn.com.flaginfo.rocketmq.exception.MqRuntimeException;
-import cn.com.flaginfo.rocketmq.producer.OnsMqProducer;
-import cn.com.flaginfo.rocketmq.producer.RocketMqProducer;
-import cn.com.flaginfo.rocketmq.producer.RocketMqTemplate;
-import lombok.Getter;
+import cn.com.flaginfo.rocketmq.factory.IMqFactory;
+import cn.com.flaginfo.rocketmq.factory.OnsMqFactory;
+import cn.com.flaginfo.rocketmq.factory.RocketMqFactory;
+import cn.com.flaginfo.rocketmq.factory.producer.RocketMqTemplate;
+import cn.com.flaginfo.rocketmq.loader.DefaultNameGenerator;
+import cn.com.flaginfo.rocketmq.loader.INameGenerator;
+import cn.com.flaginfo.rocketmq.loader.MqConsumerLoader;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.event.ContextRefreshedEvent;
-
-import java.util.List;
+import org.springframework.context.annotation.Import;
 
 
 /**
@@ -38,73 +33,60 @@ import java.util.List;
 @Configuration
 @Slf4j
 @Setter
-public class RocketMqAutoConfiguration implements ApplicationListener<ContextRefreshedEvent> {
+@ConditionalOnProperty(prefix = "spring.mq", name = "type")
+@Import({MqConfiguration.class})
+public class RocketMqAutoConfiguration implements ApplicationListener<SpringApplicationStartedEvent> {
 
-    @Value("spring.application.name:Unnamed-Service")
-    private String applicationName;
+    @Autowired
+    private MqConfiguration mqConfiguration;
 
-    /**
-     * Mq类型
-     */
-    private MqType type;
+    private AbstractConsumerBoot abstractConsumerBoot;
 
     @Bean
-    @ConditionalOnProperty(prefix = "spring.mq.rocket", name = "address")
-    public RocketMqTemplate rocketMqProducer(@Autowired RocketMqConfig rocketMqConfig) {
-        this.type = MqType.rocket;
-        RocketMqProducer rocketMqTemplate = new RocketMqProducer(rocketMqConfig);
-        rocketMqTemplate.init();
-        return rocketMqTemplate;
+    public IMqFactory mqFactory() {
+        switch (mqConfiguration.getType()) {
+            case ons:
+                return new OnsMqFactory(mqConfiguration.getOns());
+            case rocket:
+                return new RocketMqFactory(mqConfiguration.getRocket());
+        }
+        throw new MqRuntimeException("init mq factory failed, unknown mq type.");
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "spring.mq.ons", name = "address")
-    public RocketMqTemplate onsMqProducer(@Autowired OnsMqConfig onsMqConfig) {
-        this.type = MqType.ons;
-        OnsMqProducer rocketMqTemplate = new OnsMqProducer(onsMqConfig, applicationName);
-        rocketMqTemplate.init();
-        return rocketMqTemplate;
+    public RocketMqTemplate rocketMqProducer(IMqFactory mqFactory) {
+        return mqFactory.producer();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(INameGenerator.class)
+    public INameGenerator nameGenerator() {
+        return new DefaultNameGenerator();
+    }
+
+    @Bean
+    public MqConsumerLoader mqConsumerLoader() {
+        return new MqConsumerLoader(this.nameGenerator());
+    }
+
+    @Bean
+    public AbstractConsumerBoot consumerBoot(IMqFactory iMqFactory, MqConsumerLoader mqConsumerLoader, INameGenerator nameGenerator) {
+        switch (mqConfiguration.getType()) {
+            case rocket:
+                log.info("init Rocket Mq consumer boot.");
+                abstractConsumerBoot = new RocketMqConsumerBoot(iMqFactory, mqConsumerLoader, nameGenerator);
+                return abstractConsumerBoot;
+            case ons:
+                log.info("init Ons Mq consumer boot.");
+                abstractConsumerBoot = new OnsConsumerBoot(iMqFactory, mqConsumerLoader, nameGenerator);
+                return abstractConsumerBoot;
+        }
+        throw new MqRuntimeException("init mq factory failed, unknown mq type.");
     }
 
     @Override
-    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        if( null == this.type ){
-            return;
-        }
-        if (null != contextRefreshedEvent.getApplicationContext().getParent()) {
-            return;
-        }
-        this.startMqContext();
+    public void onApplicationEvent(SpringApplicationStartedEvent startedEvent) {
+        log.info("start mq consumer.");
+        this.abstractConsumerBoot.start();
     }
-
-    private void startMqContext() {
-        log.info("start init MQ context...");
-        String basePackage = null;
-        try {
-            basePackage = DiamondProperties.getPropertyString("mq.scan.base-package");
-        }catch (Exception e){}
-        try {
-            List<Class<?>> classList = ClassScannerUtils.scanner(basePackage);
-            MqConsumerLoader.getInstance().loadPushConsumerActionWithClass(classList);
-            MqConsumerLoader.getInstance().loadPullConsumerActionWithClass(classList);
-            switch (this.type) {
-                case rocket:
-                    log.info("start Rocket Mq...");
-                    new RocketMqPullConsumerBoot().start();
-                    new RocketMqPushConsumerBoot().start();
-                    break;
-                case ons:
-                    log.info("start Ons Mq...");
-                    new OnsConsumerBoot().start();
-                    break;
-                default:
-                    throw new MqRuntimeException("unknown ma type.");
-            }
-        } catch (Exception e) {
-            throw new MqRuntimeException(e);
-        }
-    }
-
-
-
 }

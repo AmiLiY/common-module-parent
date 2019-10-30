@@ -8,6 +8,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -23,48 +25,43 @@ public abstract class AbstractRedisQueueMessageRetry implements IRedisQueueMessa
 
     @Override
     public void onApplicationEvent(SpringApplicationStartedEvent event) {
-        Thread thread = new Thread(new AbstractRedisQueueMessageRetry.RetryCheck(this, moduleConfiguration.getRetryCheckInterval()));
-        thread.setDaemon(true);
-        thread.setName("RedisQueueRetryCheckThread");
-        thread.start();
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "RedisQueueRetryCheckThread");
+            thread.setDaemon(true);
+            return thread;
+        });
+        scheduler.scheduleAtFixedRate(new AbstractRedisQueueMessageRetry.RetryCheck(this),
+                0L,
+                moduleConfiguration.getRetryCheckInterval(),
+                TimeUnit.MILLISECONDS);
     }
 
     @Slf4j
     private static class RetryCheck implements Runnable {
 
         private IRedisQueueMessageRetry redisQueueMessageRetry;
-        private long timeout;
 
-        RetryCheck(IRedisQueueMessageRetry redisQueueMessageRetry, long timeout) {
+        RetryCheck(IRedisQueueMessageRetry redisQueueMessageRetry) {
             this.redisQueueMessageRetry = redisQueueMessageRetry;
-            this.timeout = timeout;
         }
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    Set<RedisQueueMessage> retryMessageSet = redisQueueMessageRetry.getNeedRetryMessages();
-                    if (CollectionUtils.isEmpty(retryMessageSet)) {
-                        continue;
-                    }
-                    for (RedisQueueMessage message : retryMessageSet) {
-                        if (null != message) {
-                            boolean isSuccess = redisQueueMessageRetry.retryAgain(message);
-                            if (isSuccess) {
-                                redisQueueMessageRetry.removeFromRetryQueue(message);
-                            }
+            try {
+                Set<RedisQueueMessage> retryMessageSet = redisQueueMessageRetry.getNeedRetryMessages();
+                if (CollectionUtils.isEmpty(retryMessageSet)) {
+                    return;
+                }
+                for (RedisQueueMessage message : retryMessageSet) {
+                    if (null != message) {
+                        boolean isSuccess = redisQueueMessageRetry.retryAgain(message);
+                        if (isSuccess) {
+                            redisQueueMessageRetry.removeFromRetryQueue(message);
                         }
                     }
-                } catch (Exception e) {
-                    //do nothing
-                } finally {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(timeout);
-                    } catch (InterruptedException e) {
-                        //do nothing
-                    }
                 }
+            } catch (Exception e) {
+                //do nothing
             }
         }
     }

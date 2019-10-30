@@ -4,6 +4,7 @@ import cn.com.flaginfo.redis.config.selector.RedisDatabaseSelector;
 import cn.com.flaginfo.redis.config.selector.RedisSourceSelector;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -29,6 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtils {
 
     private static RedisUtils redisUtils;
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${spring.data.multi.redis.enabled:true}")
+    private boolean enabled;
 
     private RedisUtils() {
     }
@@ -62,22 +69,34 @@ public class RedisUtils {
     }
 
     public static RedisUtils selectSource(String selectType) {
+        if( !redisUtils.enabled ){
+            return redisUtils;
+        }
         RedisSourceSelector.getInstance(false).select(selectType);
         return redisUtils;
     }
 
     public static RedisUtils selectDatabase(int database) {
+        if( !redisUtils.enabled ){
+            return redisUtils;
+        }
         RedisDatabaseSelector.getInstance(false).select(database);
         return redisUtils;
     }
 
     public static RedisUtils select(String selectType, int database) {
+        if( !redisUtils.enabled ){
+            return redisUtils;
+        }
         RedisSourceSelector.getInstance(false).select(selectType);
         RedisDatabaseSelector.getInstance(false).select(database);
         return redisUtils;
     }
 
     public static RedisUtils select() {
+        if( !redisUtils.enabled ){
+            return redisUtils;
+        }
         RedisSourceSelector.getInstance(false).clearSelected();
         RedisDatabaseSelector.getInstance(false).clearSelected();
         return redisUtils;
@@ -87,6 +106,9 @@ public class RedisUtils {
     public RedisTemplate<String, Object> getTemplate() {
         if (null == redisUtils) {
             throw new NullPointerException("redis util has not been initialized");
+        }
+        if( !redisUtils.enabled ){
+            return redisUtils.redisTemplate;
         }
         if (null == redisUtils.redisMultiTemplateRouting) {
             throw new NullPointerException("redis multiple template has not been initialized");

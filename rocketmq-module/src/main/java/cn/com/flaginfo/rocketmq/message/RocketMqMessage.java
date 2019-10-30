@@ -1,5 +1,7 @@
 package cn.com.flaginfo.rocketmq.message;
 
+import cn.com.flaginfo.module.common.utils.StringPool;
+import cn.com.flaginfo.module.common.utils.StringUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -26,7 +28,7 @@ public class RocketMqMessage implements MqMessage {
 		this.message = new String(messageExt.getBody(), StandardCharsets.UTF_8);
 		this.msgId = messageExt.getMsgId();
 		this.topic = messageExt.getTopic();
-		this.tags = messageExt.getTags();
+		this.tag = StringUtils.isBlank(messageExt.getTags()) ? StringPool.ASTERISK : messageExt.getTags();
 		this.keys = messageExt.getKeys();
 		this.bornTimestamp = messageExt.getBornTimestamp();
 		this.reconsumeTimes = messageExt.getReconsumeTimes();
@@ -46,7 +48,7 @@ public class RocketMqMessage implements MqMessage {
 	/**
 	 * 消息的tags
 	 */
-	private String tags;
+	private String tag;
 
 	/**
 	 * 消息ID

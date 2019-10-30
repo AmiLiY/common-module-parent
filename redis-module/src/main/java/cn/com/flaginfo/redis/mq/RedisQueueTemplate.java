@@ -1,6 +1,7 @@
 package cn.com.flaginfo.redis.mq;
 
 import cn.com.flaginfo.redis.RedisUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.UUID;
 
@@ -9,6 +10,7 @@ import java.util.UUID;
  * @date: 2019/8/22
  * TODO:
  */
+@Slf4j
 public class RedisQueueTemplate {
 
     public <D> String send(String topic, D data) {
@@ -27,7 +29,15 @@ public class RedisQueueTemplate {
         message.setDatabase(database);
         message.setTimestamp(System.currentTimeMillis());
         message.setMessage(data);
-        RedisUtils.selectDatabase(database).getTemplate().opsForList().leftPush(topic, message);
+        try{
+            RedisUtils.selectDatabase(database).getTemplate().opsForList().leftPush(topic, message);
+        }catch (Exception e){
+            log.error("redis queue send message Error:{}", message, e);
+            return null;
+        }
+        if( log.isDebugEnabled() ){
+            log.debug("redis queue send message success:{}", message);
+        }
         if( null != callback ){
             callback.callback(message);
         }

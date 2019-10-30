@@ -15,7 +15,6 @@ import org.apache.http.client.methods.*;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.LayeredConnectionSocketFactory;
@@ -24,6 +23,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.AbstractHttpEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
@@ -31,13 +31,9 @@ import org.apache.http.util.EntityUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -74,8 +70,8 @@ public class HttpClientPoolUtil {
     public HttpClientPoolUtil(HttpClientPoolConfig config) {
         this();
         if (null == config) {
-           log.warn("the parameter which named HttpClientPoolConfig is null, will be init HttpClientPoolUtil with default config.");
-        }else{
+            log.warn("the parameter which named HttpClientPoolConfig is null, will be init HttpClientPoolUtil with default config.");
+        } else {
             this.config = config;
         }
     }
@@ -146,18 +142,17 @@ public class HttpClientPoolUtil {
      */
     public CloseableHttpClient createHttpClient(String url) {
         UrlUtils.Url urlInfo = UrlUtils.parse(url);
-        if( !urlInfo.isUrl() ){
+        if (!urlInfo.isUrl()) {
             url = HttpConstants.HTTP_PROTOCOL + url;
             urlInfo = UrlUtils.parse(url);
         }
-        if( !urlInfo.isUrl() ){
+        if (!urlInfo.isUrl()) {
             throw new IllegalArgumentException("url formatter error : " + url);
         }
         ConnectionSocketFactory plainSocketFactory = PlainConnectionSocketFactory.getSocketFactory();
         LayeredConnectionSocketFactory sslSocketFactory = SSLConnectionSocketFactory.getSocketFactory();
-        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().register("http", plainSocketFactory)
+        Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create().register(HttpConstants.PROTOCOL_HTTP, plainSocketFactory)
                 .register(HttpConstants.PROTOCOL_HTTPS, sslSocketFactory)
-                .register(HttpConstants.PROTOCOL_HTTP, new PlainConnectionSocketFactory())
                 .build();
 
         manager = new PoolingHttpClientConnectionManager(registry);
@@ -165,54 +160,10 @@ public class HttpClientPoolUtil {
         manager.setDefaultMaxPerRoute(config.getMaxPreRout());
         HttpHost httpHost = new HttpHost(urlInfo.getHost(), urlInfo.getPort());
         manager.setMaxPerRoute(new HttpRoute(httpHost), config.getMaxPreRout());
-        HttpRequestRetryHandler retryHandler = (e, i, httpContext) -> {
-            if (i > config.getRetryTimes()) {
-                //重试超过3次,放弃请求
-                log.error("retry has more than 3 time, give up request");
-                return false;
-            }
-            if (e instanceof NoHttpResponseException) {
-                //服务器没有响应,可能是服务器断开了连接,应该重试
-                log.error("receive no response from server, retry");
-                return true;
-            }
-            if (e instanceof SSLHandshakeException) {
-                // SSL握手异常
-                log.error("SSL hand shake exception");
-                return false;
-            }
-            if (e instanceof InterruptedIOException) {
-                //超时
-                log.error("InterruptedIOException");
-                return false;
-            }
-            if (e instanceof UnknownHostException) {
-                // 服务器不可达
-                log.error("server host unknown");
-                return false;
-            }
-            if (e instanceof ConnectTimeoutException) {
-                // 连接超时
-                log.error("Connection Time out");
-                return false;
-            }
-            if (e instanceof SSLException) {
-                log.error("SSLException");
-                return false;
-            }
-            HttpClientContext context = HttpClientContext.adapt(httpContext);
-            HttpRequest request = context.getRequest();
-            if (!(request instanceof HttpEntityEnclosingRequest)) {
-                //如果请求不是关闭连接的请求
-                return true;
-            }
-            return false;
-        };
-
-        CloseableHttpClient client = HttpClients.custom()
+        HttpRequestRetryHandler retryHandler = new DefaultHttpRequestRetryHandler(config.getRetryTimes(), false);
+        return HttpClients.custom()
                 .setConnectionManager(manager)
                 .setRetryHandler(retryHandler).build();
-        return client;
     }
 
     /**
@@ -316,6 +267,7 @@ public class HttpClientPoolUtil {
     /**
      * request请求
      * 默认使用json格式
+     *
      * @param url
      * @param params
      * @return
@@ -327,6 +279,7 @@ public class HttpClientPoolUtil {
     /**
      * request请求
      * 如果header不设置content-type, 默认使用json格式
+     *
      * @param url
      * @param header
      * @param params
@@ -420,11 +373,11 @@ public class HttpClientPoolUtil {
         return this.doRequest(url, request, header);
     }
 
-    public Response post(String url, HttpPost post ){
+    public Response post(String url, HttpPost post) {
         return this.doRequest(url, post);
     }
 
-    public Response get(String url, HttpGet get ){
+    public Response get(String url, HttpGet get) {
         return this.doRequest(url, get);
     }
 
@@ -434,10 +387,10 @@ public class HttpClientPoolUtil {
         return this.doRequest(url, request);
     }
 
-    public Response doRequest(String url, HttpRequestBase request ){
+    public Response doRequest(String url, HttpRequestBase request) {
         CloseableHttpResponse response = null;
         try {
-            if( null == request.getURI() ){
+            if (null == request.getURI()) {
                 request.setURI(URI.create(url));
             }
             response = this.getHttpClient(url)
@@ -518,7 +471,7 @@ public class HttpClientPoolUtil {
     @Getter
     @ToString
     @Builder
-    public static class Response{
+    public static class Response {
         /**
          * 响应状态码，该参数为Http协议状态
          */
@@ -529,10 +482,10 @@ public class HttpClientPoolUtil {
          */
         private String body;
 
-        public <T> T getBody(Class<T> tClass){
-            if( StringUtils.isBlank(body) ){
+        public <T> T getBody(Class<T> tClass) {
+            if (StringUtils.isBlank(body)) {
                 return null;
-            }else{
+            } else {
                 return JSONObject.parseObject(body, tClass);
             }
         }

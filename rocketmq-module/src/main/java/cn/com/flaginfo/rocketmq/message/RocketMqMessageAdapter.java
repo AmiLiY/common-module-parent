@@ -1,8 +1,10 @@
 package cn.com.flaginfo.rocketmq.message;
 
 
+import cn.com.flaginfo.rocketmq.annotation.RocketTopic;
 import cn.com.flaginfo.rocketmq.config.ConsumerType;
 import cn.com.flaginfo.rocketmq.config.MqType;
+import cn.com.flaginfo.rocketmq.domain.MqInvokeMethodDefine;
 import cn.com.flaginfo.rocketmq.exception.MqRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
@@ -17,14 +19,15 @@ import java.util.List;
  * @date: 2018/11/22 上午10:51
  */
 @Slf4j
-public class RocketMqMessageAdapter extends AbstractMqMessageAdapter<ConsumeConcurrentlyStatus> implements MessageListenerConcurrently {
+public class RocketMqMessageAdapter extends AbstractMqMessageAdapter<ConsumeConcurrentlyStatus> implements MessageListenerConcurrently{
 
     /**
      * 消息模式
      */
     private final ConsumerType consumerType;
 
-    public RocketMqMessageAdapter(ConsumerType consumerType) {
+    public RocketMqMessageAdapter(ConsumerType consumerType, RocketTopic rocketTopic, MqInvokeMethodDefine invokeMethodDefine) {
+        super(rocketTopic, invokeMethodDefine);
         this.consumerType = consumerType;
     }
 

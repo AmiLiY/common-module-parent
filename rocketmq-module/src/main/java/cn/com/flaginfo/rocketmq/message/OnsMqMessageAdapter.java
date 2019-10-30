@@ -1,7 +1,9 @@
 package cn.com.flaginfo.rocketmq.message;
 
+import cn.com.flaginfo.rocketmq.annotation.RocketTopic;
 import cn.com.flaginfo.rocketmq.config.ConsumerType;
 import cn.com.flaginfo.rocketmq.config.MqType;
+import cn.com.flaginfo.rocketmq.domain.MqInvokeMethodDefine;
 import com.aliyun.openservices.ons.api.Action;
 import com.aliyun.openservices.ons.api.ConsumeContext;
 import com.aliyun.openservices.ons.api.Message;
@@ -20,7 +22,8 @@ public class OnsMqMessageAdapter extends AbstractMqMessageAdapter<Action> implem
      */
     private final ConsumerType consumerType;
 
-    public OnsMqMessageAdapter(ConsumerType consumerType){
+    public OnsMqMessageAdapter(ConsumerType consumerType, RocketTopic rocketTopic, MqInvokeMethodDefine invokeMethodDefine){
+        super(rocketTopic, invokeMethodDefine);
         this.consumerType = consumerType;
     }
 

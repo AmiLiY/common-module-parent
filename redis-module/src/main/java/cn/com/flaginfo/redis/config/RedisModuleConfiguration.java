@@ -27,12 +27,22 @@ public class RedisModuleConfiguration {
     private String queueScanPackage;
 
     /**
-     * 重试检测间隔 默认1秒
+     * 重试检测间隔 默认1分钟
      */
-    private long retryCheckInterval =  1000;
+    private long retryCheckInterval =  60 * 1000;
 
     /**
      * 重试间隔 默认1分钟
      */
     private long retryInterval =  60 * 1000;
+
+    /**
+     * 消费超时检测间隔 默认1分钟
+     */
+    private long consumerTimeoutCheckInterval =  60 * 1000;
+
+    /**
+     * 消费超时时长24小时
+     */
+    private long consumerTimeout =  24 * 60 * 60 * 1000;
 }

@@ -19,8 +19,15 @@ public class Md5Utils {
         if (StringUtils.isBlank(str)) {
             return "";
         }
+        return encrypt(str.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String encrypt(byte[] bytes) throws Exception {
+        if ( null == bytes || 0 == bytes.length) {
+            return null;
+        }
         MessageDigest md5 = MessageDigest.getInstance("md5");
-        md5.update(str.getBytes(StandardCharsets.UTF_8));
+        md5.update(bytes);
         byte[] md5Bytes = md5.digest();
         return Base64.encodeBase64String(md5Bytes);
     }

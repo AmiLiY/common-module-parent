@@ -16,12 +16,15 @@ import java.util.regex.Pattern;
  * #{person.name}:#{person.age}
  * #{0}
  * #{toJSON(person)}
+ *
  * @author meng.liu
  */
 @Slf4j
 public class AnnotationResolver {
 
     private static final String NULL_STRING = "null";
+
+    private static final Object NULL = null;
 
     private static Pattern PATTERN = Pattern.compile("(#\\{([^\\}]+)\\})");
 
@@ -34,9 +37,9 @@ public class AnnotationResolver {
     /**
      * 解析注解上的值
      *
-     * @param names 参数名称
-     * @param args  参数值
-     * @param str   需要解析的字符串
+     * @param names       参数名称
+     * @param args        参数值
+     * @param str         需要解析的字符串
      * @param nullReplace null对象的替代者
      * @return
      */
@@ -51,7 +54,7 @@ public class AnnotationResolver {
             String sParseStr = fParseStr;
             Matcher matcherJson = TO_JSON_PATTERN.matcher(fParseStr);
             boolean toJson = false;
-            if( matcherJson.find() ){
+            if (matcherJson.find()) {
                 toJson = true;
                 fParseStr = fParseStr.replaceAll("\\(", "\\\\(")
                         .replaceAll("\\)", "\\\\)");
@@ -67,12 +70,12 @@ public class AnnotationResolver {
                 value = simpleResolver(sParseStr, names, args);
             }
             String replacement;
-            if( null == value ){
+            if (null == value) {
                 replacement = nullReplace;
-            }else{
+            } else {
                 replacement = toJson ? JSONObject.toJSONString(value) : String.valueOf(value);
             }
-            if( StringUtils.isBlank(replacement) ){
+            if (StringUtils.isBlank(replacement)) {
                 replacement = nullReplace;
             }
             str = str.replaceAll("(#\\{" + fParseStr + "\\})", Matcher.quoteReplacement(replacement));
@@ -80,6 +83,33 @@ public class AnnotationResolver {
         return str;
     }
 
+    /**
+     * 解析ognl参数
+     * @param str
+     * @param names
+     * @param args
+     * @return
+     */
+    public static Object resolverValue(String str, String[] names, Object[] args) {
+        if (StringUtils.isBlank(str)) {
+            return null;
+        }
+        Object value = null;
+        Matcher matcher = PATTERN.matcher(str);
+        while (matcher.find()) {
+            String sParseStr = matcher.group(2).trim();
+            if (sParseStr.contains(".")) {
+                try {
+                    value = complexResolver(sParseStr, names, args);
+                } catch (Exception e) {
+                    log.error("", e);
+                }
+            } else {
+                value = simpleResolver(sParseStr, names, args);
+            }
+        }
+        return value;
+    }
 
     /**
      * 递归解析数据值
@@ -102,13 +132,13 @@ public class AnnotationResolver {
     private static Object getValue(Object obj, int index, String[] strs) {
         try {
             if (obj != null && index < strs.length - 1) {
-                if( obj instanceof Map){
+                if (obj instanceof Map) {
                     obj = ((Map) obj).get(strs[index + 1]);
-                }else if( obj instanceof List ){
-                    obj = ((List)obj).get(Integer.valueOf(strs[index + 1]));
-                }else if( obj.getClass().isArray() ){
+                } else if (obj instanceof List) {
+                    obj = ((List) obj).get(Integer.valueOf(strs[index + 1]));
+                } else if (obj.getClass().isArray()) {
                     obj = Arrays.asList(obj).get(Integer.valueOf(strs[index + 1]));
-                }else{
+                } else {
                     obj = ReflectionUtils.invokeGetterMethod(obj, strs[index + 1]);
                 }
                 obj = getValue(obj, index + 1, strs);

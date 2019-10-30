@@ -64,11 +64,11 @@ public class RpcResponseUtils {
      * @param <T>
      * @return
      */
-    public static <T> BaseResponse<List<T>> success(List<T> data, int dataCount){
+    public static <T> BaseResponse<List<T>> success(List<T> data, long dataCount){
         return success(data, dataCount, SUCCESS_MSG);
     }
 
-    public static <D> PagableResponse<List<D>> success(PageInfo pageInfo, List<D> data, Integer total){
+    public static <D> PagableResponse<List<D>> success(PageInfo pageInfo, List<D> data, long total){
         PagableResponse<List<D>> pagableResponse = new PagableResponse<>();
         if(CollectionUtils.isEmpty(data)){
             data = Collections.emptyList();
@@ -76,7 +76,7 @@ public class RpcResponseUtils {
         BeanUtils.copyProperties(pageInfo, pagableResponse);
         pagableResponse.setData(data);
         pagableResponse.setDataCount(data.size());
-        pagableResponse.setTotal(total);
+        pagableResponse.setTotal((int)total);
         pagableResponse.setCode(SUCCESS);
         pagableResponse.setMessage(SUCCESS_MSG);
         return pagableResponse;
@@ -101,10 +101,10 @@ public class RpcResponseUtils {
      * @param <T>
      * @return
      */
-    public static <T> BaseResponse<List<T>> success(List<T> data, int dataCount, String message){
+    public static <T> BaseResponse<List<T>> success(List<T> data, long dataCount, String message){
         BaseResponse<List<T>> baseResponse = new BaseResponse<>();
         baseResponse.setData(data);
-        baseResponse.setDataCount(dataCount);
+        baseResponse.setDataCount((int)dataCount);
         baseResponse.setMessage(message);
         return baseResponse;
     }

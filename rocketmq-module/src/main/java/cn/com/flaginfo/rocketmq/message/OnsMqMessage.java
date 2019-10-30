@@ -1,15 +1,14 @@
 package cn.com.flaginfo.rocketmq.message;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-
+import cn.com.flaginfo.module.common.utils.StringPool;
+import cn.com.flaginfo.module.common.utils.StringUtils;
 import com.aliyun.openservices.ons.api.Message;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -29,7 +28,7 @@ public class OnsMqMessage implements MqMessage {
 		this.message = new String(messageExt.getBody(), StandardCharsets.UTF_8);
 		this.msgId = messageExt.getMsgID();
 		this.topic = messageExt.getTopic();
-		this.tags = messageExt.getTag();
+		this.tag = StringUtils.isBlank(messageExt.getTag()) ? StringPool.ASTERISK : messageExt.getTag();
 		this.keys = messageExt.getKey();
 		this.bornTimestamp = messageExt.getBornTimestamp();
 		this.reconsumeTimes = messageExt.getReconsumeTimes();
@@ -49,7 +48,7 @@ public class OnsMqMessage implements MqMessage {
 	/**
 	 * 消息的tags
 	 */
-	private String tags;
+	private String tag;
 
 	/**
 	 * 消息ID

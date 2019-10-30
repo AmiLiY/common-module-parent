@@ -14,11 +14,12 @@ import org.springframework.data.redis.core.RedisTemplate;
  */
 @Configuration
 @ConfigurationProperties(prefix = "spring.data.redis.second")
-@ConditionalOnProperty("spring.data.redis.second.id")
+@ConditionalOnProperty(name = "spring.data.multi.redis.enabled", havingValue = "true", matchIfMissing = true)
 @Order(1)
 public class SecondRedisSourceTemplate extends AbstractRedisTemplate {
 
-        @Override
+    @Override
+    @ConditionalOnProperty("spring.data.redis.second.id")
     public @Bean("secondRedisTemplate")
     RedisTemplate<String, Object> getRedisTemplate() throws Exception {
         return this.instanceRedisTemplate();
