@@ -1,5 +1,7 @@
 package cn.com.flaginfo.module.common.mvc.wrap;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.lang.annotation.*;
 
 /**
@@ -31,4 +33,10 @@ public @interface ResponseBodyFilter {
      * @return
      */
     String[] include() default {};
+
+    /**
+     * json默认配置
+     * @return
+     */
+    JsonInclude.Include jsonInclude() default JsonInclude.Include.ALWAYS;
 }

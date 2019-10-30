@@ -125,6 +125,7 @@ public class CustomResponseBodyAdapterWrap implements ICustomMvcAdapterWrap {
                         SimpleBeanPropertyFilter.serializeAllExcept(responseBodyFilter.exclude())));
                 mapper.addMixIn(responseBodyFilter.type(), RewriteFilter.class);
             }
+            mapper.setSerializationInclusion(responseBodyFilter.jsonInclude());
         }
 
         /**
