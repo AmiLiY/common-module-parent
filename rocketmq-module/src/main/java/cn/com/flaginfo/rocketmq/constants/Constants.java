@@ -11,9 +11,9 @@ public class Constants extends cn.com.flaginfo.module.common.constants.Constants
      */
     public static final String IS_RUNNING = "isRunning";
 
-    public static final String PRODUCER_ID_PREFIX = "P_ID_";
+    public static final String PRODUCER_ID_PREFIX = "PID_";
 
-    public static final String CONSUMER_ID_PREFIX = "C_ID_";
+    public static final String CONSUMER_ID_PREFIX = "GID_";
 
     public static final String MQ_CONSUMED_MESSAGE = "_MQ_Consumed_Message_";
 }

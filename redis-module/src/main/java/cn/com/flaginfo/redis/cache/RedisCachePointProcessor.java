@@ -1,6 +1,7 @@
 package cn.com.flaginfo.redis.cache;
 
 import cn.com.flaginfo.module.common.domain.LocalCache;
+import cn.com.flaginfo.module.reflect.PointUtils;
 import cn.com.flaginfo.redis.RedisUtils;
 import cn.com.flaginfo.redis.lock.jedis.impl.RedisLockNx;
 import lombok.extern.slf4j.Slf4j;
@@ -10,12 +11,9 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,7 +46,7 @@ public class RedisCachePointProcessor {
 
     @Around("annotationPoint()")
     public Object around(ProceedingJoinPoint point) throws Throwable {
-        RedisCache redisCache = this.getAnnotation(point);
+        RedisCache redisCache = PointUtils.getAnnotation(point, RedisCache.class);
         if (null == redisCache) {
             return this.doDefault(point);
         }
@@ -343,30 +341,6 @@ public class RedisCachePointProcessor {
     }
 
     /**
-     * 获取对象的返回方法
-     *
-     * @param point
-     * @return
-     */
-    private Class<?> getAnnotationReturnType(ProceedingJoinPoint point) {
-        MethodSignature methodSignature = (MethodSignature) point.getSignature();
-        Method method = methodSignature.getMethod();
-        return method.getReturnType();
-    }
-
-    /**
-     * 获取切入点方法的注解
-     *
-     * @param point
-     * @return
-     */
-    private RedisCache getAnnotation(ProceedingJoinPoint point) {
-        MethodSignature methodSignature = (MethodSignature) point.getSignature();
-        Method method = methodSignature.getMethod();
-        return AnnotationUtils.findAnnotation(method, RedisCache.class);
-    }
-
-    /**
      * 生成缓存Key
      *
      * @param cache
@@ -374,8 +348,7 @@ public class RedisCachePointProcessor {
      * @return
      */
     private String generateCacheKey(RedisCache cache, ProceedingJoinPoint point) {
-        MethodSignature methodSignature = (MethodSignature) point.getSignature();
-        return this.getFormatterClass(cache.cacheKeyFormatter()).formatter(cache, methodSignature.getParameterNames(), point.getArgs(), methodSignature.getMethod().getReturnType());
+        return this.getFormatterClass(cache.cacheKeyFormatter()).formatter(cache, PointUtils.getPointParameterNames(point), point.getArgs(), PointUtils.getPointReturnType(point));
     }
 
     /**

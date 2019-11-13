@@ -19,6 +19,8 @@ public class SystemClock {
     private final long period;
     private final AtomicLong now;
 
+    private static SystemClock instance;
+
     private SystemClock(long period) {
         this.period = period;
         this.now = new AtomicLong(System.currentTimeMillis());
@@ -26,7 +28,14 @@ public class SystemClock {
     }
 
     private static SystemClock instance() {
-        return InstanceHolder.INSTANCE;
+        if( null == instance ){
+            synchronized (SystemClock.class){
+                if( null == instance ){
+                    instance = new SystemClock(1);
+                }
+            }
+        }
+        return instance;
     }
 
     public static long now() {
@@ -48,9 +57,5 @@ public class SystemClock {
 
     private long currentTimeMillis() {
         return now.get();
-    }
-
-    private static class InstanceHolder {
-        public static final SystemClock INSTANCE = new SystemClock(1);
     }
 }

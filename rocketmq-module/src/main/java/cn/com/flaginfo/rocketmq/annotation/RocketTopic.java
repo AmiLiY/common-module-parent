@@ -35,7 +35,13 @@ public @interface RocketTopic {
      *
      * @return
      */
-    String title();
+    String title() default "";
+
+    /**
+     *
+     *
+     */
+    String titleParam() default "";
 
     /**
      * 订购的tag 可以为空

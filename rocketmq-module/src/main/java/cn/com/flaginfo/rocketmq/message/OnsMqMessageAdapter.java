@@ -29,7 +29,7 @@ public class OnsMqMessageAdapter extends AbstractMqMessageAdapter<Action> implem
 
     @Override
     public Action consume(Message ext, ConsumeContext context) {
-        this.setThreadTrace(ext.getTopic(), ext.getKey());
+        this.setThreadTrace(ext.getTopic(), ext.getTag(), ext.getKey());
         try{
             if( log.isDebugEnabled() ){
                 log.debug("mq consume message enter...");

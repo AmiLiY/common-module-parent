@@ -53,7 +53,7 @@ public abstract class RocketMqTemplate {
      * @return
      */
     public SendResultDO sendJsonMessage(String topicName, final String keys, final Object body) {
-        return sendMessage(topicName, "", keys, JSONObject.toJSONString(body));
+        return sendMessage(topicName, null, keys, JSONObject.toJSONString(body));
     }
 
     /**

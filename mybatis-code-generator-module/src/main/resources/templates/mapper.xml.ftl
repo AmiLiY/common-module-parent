@@ -4,8 +4,11 @@
 
 <#if enableCache>
     <!-- 开启二级缓存 -->
-    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>
-
+    <#if cacheClass??>
+    <cache type="${cacheClass}"/>
+    <#else>
+    <cache/>
+    </#if>
 </#if>
 <#if baseResultMap>
     <!-- 通用查询映射结果 -->
@@ -15,24 +18,33 @@
         <id column="${field.name}" property="${field.propertyName}" />
 </#if>
 </#list>
-<#list table.commonFields as field><#--生成公共字段 -->
-    <result column="${field.name}" property="${field.propertyName}" />
-</#list>
 <#list table.fields as field>
 <#if !field.keyFlag><#--生成普通字段 -->
         <result column="${field.name}" property="${field.propertyName}" />
 </#if>
 </#list>
+    <#list table.commonFields as field><#--生成公共字段 -->
+        <result column="${field.name}" property="${field.propertyName}" />
+    </#list>
     </resultMap>
 
 </#if>
 <#if baseColumnList>
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-<#list table.commonFields as field>
+<#list table.fields as field>
+    <#if field.keyFlag><#--生成主键排在第一位-->
         ${field.name},
+    </#if>
 </#list>
-        ${table.fieldNames}
+<#list table.fields as field>
+    <#if !field.keyFlag><#--生成普通字段 -->
+        ${field.name}<#if ((field_index + 1) != table.fields?size) || table.commonFields?size != 0>,</#if>
+    </#if>
+</#list>
+<#list table.commonFields as field><#--生成公共字段 -->
+        ${field.name}<#if ((field_index + 1) != table.commonFields?size)>,</#if>
+</#list>
     </sql>
 
 </#if>

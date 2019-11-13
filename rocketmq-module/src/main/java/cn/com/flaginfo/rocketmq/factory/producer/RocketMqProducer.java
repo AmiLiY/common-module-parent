@@ -24,7 +24,7 @@ public class RocketMqProducer extends RocketMqTemplate {
 
     @Override
     public SendResultDO sendMessage(String topicName, String body) {
-        return sendMessage(topicName, "", null, body);
+        return sendMessage(topicName, null, null, body);
     }
 
     @Override
@@ -32,13 +32,15 @@ public class RocketMqProducer extends RocketMqTemplate {
         if (body == null) {
             body = "";
         }
-
         Message message = new Message();
         message.setTopic(topicName);
         message.setBody(body.getBytes(StandardCharsets.UTF_8));
-        message.setKeys(keys);
-        message.setTags(tags);
-
+        if( null != keys ){
+            message.setKeys(keys);
+        }
+        if( null != tags ){
+            message.setTags(tags);
+        }
         return sendMessage(message);
     }
 

@@ -123,25 +123,36 @@ public class AnnotationResolver {
         String[] strs = str.split("\\.");
         for (int i = 0; i < names.length; i++) {
             if (strs[0].equals(names[i])) {
-                return getValue(args[i], 0, strs);
+                return getValue(args[i], 1, strs);
             }
         }
         return null;
     }
 
-    private static Object getValue(Object obj, int index, String[] strs) {
+    /**
+     * 递归解析数据值
+     * @param str
+     * @param arg
+     * @return
+     */
+    public static Object complexResolver(String str, Object arg) {
+        String[] strs = str.split("\\.");
+        return getValue(arg, 0, strs);
+    }
+
+    private static Object getValue(Object obj, int position, String[] strs) {
         try {
-            if (obj != null && index < strs.length - 1) {
+            if (obj != null && position < strs.length) {
                 if (obj instanceof Map) {
-                    obj = ((Map) obj).get(strs[index + 1]);
+                    obj = ((Map) obj).get(strs[position]);
                 } else if (obj instanceof List) {
-                    obj = ((List) obj).get(Integer.valueOf(strs[index + 1]));
+                    obj = ((List) obj).get(Integer.valueOf(strs[position]));
                 } else if (obj.getClass().isArray()) {
-                    obj = Arrays.asList(obj).get(Integer.valueOf(strs[index + 1]));
+                    obj = Arrays.asList(obj).get(Integer.valueOf(strs[position]));
                 } else {
-                    obj = ReflectionUtils.invokeGetterMethod(obj, strs[index + 1]);
+                    obj = ReflectionUtils.invokeGetterMethod(obj, strs[position]);
                 }
-                obj = getValue(obj, index + 1, strs);
+                obj = getValue(obj, position + 1, strs);
             }
             return obj;
         } catch (Exception e) {

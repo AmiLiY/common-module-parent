@@ -24,7 +24,7 @@ public class OnsMqProducer extends RocketMqTemplate {
 
     @Override
     public SendResultDO sendMessage(String topicName, String body) {
-        return sendMessage(topicName, "", null, body);
+        return sendMessage(topicName, null, null, body);
     }
 
     @Override
@@ -36,8 +36,12 @@ public class OnsMqProducer extends RocketMqTemplate {
         Message message = new Message();
         message.setTopic(topicName);
         message.setBody(body.getBytes(StandardCharsets.UTF_8));
-        message.setKey(keys);
-        message.setTag(tags);
+        if( null != keys ){
+            message.setKey(keys);
+        }
+        if( null != tags ){
+            message.setTag(tags);
+        }
         return sendMessage(message);
     }
 

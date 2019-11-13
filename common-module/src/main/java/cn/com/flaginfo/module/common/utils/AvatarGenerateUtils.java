@@ -13,6 +13,7 @@ import java.io.IOException;
 
 /**
  * 头像生成工具
+ *
  * @author: Meng.Liu
  * @date: 2018/12/4 下午5:21
  */
@@ -71,6 +72,7 @@ public class AvatarGenerateUtils {
 
     /**
      * 根据名称生成头像
+     *
      * @param name
      * @return
      */
@@ -80,6 +82,7 @@ public class AvatarGenerateUtils {
 
     /**
      * 根据名称和性别生成头像
+     *
      * @param name
      * @param gender
      * @return
@@ -90,6 +93,7 @@ public class AvatarGenerateUtils {
 
     /**
      * 根据名称和头像和尺寸生成头像
+     *
      * @param name
      * @param gender
      * @param size
@@ -104,6 +108,7 @@ public class AvatarGenerateUtils {
 
     /**
      * 绘制填充背景的文字图片
+     *
      * @param size
      * @param text
      * @param canvasBgColor
@@ -128,6 +133,7 @@ public class AvatarGenerateUtils {
 
     /**
      * 绘制不填充的文字图片
+     *
      * @param size
      * @param text
      * @param canvasBgColor
@@ -221,15 +227,15 @@ public class AvatarGenerateUtils {
     static interface ImageProcess {
         /**
          * 图片操作
+         *
          * @param g2d
          */
         void process(Graphics2D g2d);
     }
 
     static byte[] imageToBytes(BufferedImage image, String format) {
-        ByteArrayOutputStream baos =
-                new ByteArrayOutputStream();
-        try {
+        try (ByteArrayOutputStream baos =
+                     new ByteArrayOutputStream()) {
             ImageIO.write(image,
                     StringUtils.isNotBlank(format) ?
                             format : "png", baos);
@@ -237,8 +243,6 @@ public class AvatarGenerateUtils {
         } catch (IOException e) {
             throw new IllegalStateException(
                     "Write Image Error Caused", e);
-        } finally {
-            IOUtils.closeQuietly(baos);
         }
     }
 }

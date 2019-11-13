@@ -174,7 +174,7 @@ public class QueueTask implements Runnable {
             synchronized (this) {
                 if (isRunning) {
                     isRunning = false;
-                    log.info("the queue task for topic {} has been close.", topic);
+                    log.info("the queue task for topic that named [{}] has been closed.", topic);
                 }
             }
         }

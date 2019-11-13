@@ -37,7 +37,7 @@ public class RocketMqMessageAdapter extends AbstractMqMessageAdapter<ConsumeConc
             throw new MqRuntimeException("mq receive message size > 1, please check the configuration.");
         }
         MessageExt ext = exts.get(0);
-        this.setThreadTrace(ext.getTopic(), ext.getKeys());
+        this.setThreadTrace(ext.getTopic(), ext.getTags(), ext.getKeys());
         try {
             if (log.isDebugEnabled()) {
                 log.debug("mq consume message enter...");

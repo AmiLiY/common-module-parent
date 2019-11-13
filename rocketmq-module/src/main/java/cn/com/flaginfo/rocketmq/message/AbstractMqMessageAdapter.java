@@ -1,6 +1,9 @@
 package cn.com.flaginfo.rocketmq.message;
 
+import cn.com.flaginfo.module.common.utils.StringPool;
+import cn.com.flaginfo.module.common.utils.StringUtils;
 import cn.com.flaginfo.module.common.utils.TimeUtils;
+import cn.com.flaginfo.module.common.utils.TraceLogUtils;
 import cn.com.flaginfo.rocketmq.annotation.RocketTopic;
 import cn.com.flaginfo.rocketmq.config.ConsumerType;
 import cn.com.flaginfo.rocketmq.config.MqType;
@@ -25,12 +28,18 @@ import java.util.Collections;
 @Slf4j
 public abstract class AbstractMqMessageAdapter<T> {
 
+    public static final String TOPIC = "Topic";
+
+    public static final String Keys = "Keys";
+
+    public static final String Tags = "Tags";
+
     private MqInvokeMethodDefine invokeMethodDefine;
     private RocketTopic rocketTopic;
 
     public AbstractMqMessageAdapter(RocketTopic rocketTopic, MqInvokeMethodDefine invokeMethodDefine) {
-       this.invokeMethodDefine = invokeMethodDefine;
-       this.rocketTopic = rocketTopic;
+        this.invokeMethodDefine = invokeMethodDefine;
+        this.rocketTopic = rocketTopic;
     }
 
     protected T invokeMessage(ConsumerType consumerType, MqMessage message) {
@@ -114,9 +123,17 @@ public abstract class AbstractMqMessageAdapter<T> {
 
     }
 
-    protected void setThreadTrace(String topic, String key) {
-        MDC.put(Constants.LOG_TRACE_ID, "[" + topic
-                + (key == null ? "]" : ("]-[" + key + "]")));
+    protected void setThreadTrace(String topic, String tag, String key) {
+        StringBuilder builder = new StringBuilder();
+        builder.append(TraceLogUtils.getTraceId()).append("] | [")
+                .append(TOPIC).append(StringPool.COLON).append(topic);
+        if (StringUtils.isNotBlank(tag) && !StringPool.NULL.equals(tag)) {
+            builder.append(" | ").append(Tags).append(StringPool.COLON).append(tag);
+        }
+        if (StringUtils.isNotBlank(key) && !StringPool.NULL.equals(key)) {
+            builder.append(" | ").append(Keys).append(StringPool.COLON).append(key);
+        }
+        MDC.put(Constants.LOG_TRACE_ID, builder.toString());
     }
 
     protected void removeThreadTrace() {

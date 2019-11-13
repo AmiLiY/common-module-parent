@@ -38,12 +38,12 @@ public class OnsMqFactory implements IMqFactory<Consumer, Object> {
         } else {
             groupName = this.getProducerId(onsMqConfig.getProducerGroupName());
         }
-        log.info("init ons producer, producer name : {}", groupName);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESRV_ADDR, onsMqConfig.getAddress());
         properties.put(PropertyKeyConst.AccessKey, onsMqConfig.getAccessKey());
         properties.put(PropertyKeyConst.SecretKey, onsMqConfig.getSecretKey());
         properties.put(PropertyKeyConst.GROUP_ID, groupName);
+        log.info("ons register producer group : [{}]", groupName);
         properties.put(PropertyKeyConst.isVipChannelEnabled, onsMqConfig.getVipChannelEnabled());
         Producer producer = ONSFactory.createProducer(properties);
         producer.start();
@@ -60,7 +60,9 @@ public class OnsMqFactory implements IMqFactory<Consumer, Object> {
     @Override
     public synchronized Consumer pushConsumer(String groupName, String messageModel) {
         Properties properties = new Properties();
+        groupName = this.getConsumerId(groupName);
         properties.put(PropertyKeyConst.GROUP_ID, groupName);
+        log.info("ons register consumer group : [{}]", groupName);
         properties.put(PropertyKeyConst.AccessKey, onsMqConfig.getAccessKey());
         properties.put(PropertyKeyConst.SecretKey, onsMqConfig.getSecretKey());
         properties.put(PropertyKeyConst.NAMESRV_ADDR, onsMqConfig.getAddress());

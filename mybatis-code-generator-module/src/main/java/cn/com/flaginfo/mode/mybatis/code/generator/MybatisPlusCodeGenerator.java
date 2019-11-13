@@ -1,234 +1,243 @@
 package cn.com.flaginfo.mode.mybatis.code.generator;
 
-import cn.com.flaginfo.mode.mybatis.code.domain.CodeGeneratorConfig;
-import com.baomidou.mybatisplus.core.toolkit.Assert;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
 import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.InjectionConfig;
 import com.baomidou.mybatisplus.generator.config.*;
 import com.baomidou.mybatisplus.generator.config.po.TableInfo;
-import com.baomidou.mybatisplus.generator.config.rules.DateType;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
 import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * @author LiuMeng
- */
-@Getter
-@Setter
-@ToString
 public class MybatisPlusCodeGenerator {
 
-    private CodeGeneratorConfig codeGeneratorConfig;
+    private Configuration configuration;
 
-    private String basePath;
-
-    private String javaHome = "/src/main/java";
-
-    private String resourceHome = "/src/main/resources";
-
-    public MybatisPlusCodeGenerator(CodeGeneratorConfig codeGeneratorConfig) {
-        this.codeGeneratorConfig = codeGeneratorConfig;
-        Assert.notNull(codeGeneratorConfig, "代码生成配置不能为空");
-        Assert.notNull(codeGeneratorConfig.getAuthor(), "代码作者不能为空");
-        Assert.notNull(codeGeneratorConfig.getDatabase(), "数据库名称不能为空");
-        Assert.notNull(codeGeneratorConfig.getUserName(), "数据库用户名不能为空");
-        Assert.notNull(codeGeneratorConfig.getPassword(), "数据库密码不能为空");
-        Assert.notNull(codeGeneratorConfig.getDbHost(), "数据库地址不能为空");
-        Assert.notNull(codeGeneratorConfig.getTables(), "数据库表名不能为空");
-    }
-
+    private String XML = "/templates/mapper.xml.ftl";
 
     /**
-     * 自动生成代码
+     *
+     * @param propertiesFileName 配置文件路径，配置内容可以参考{code-generator-template.properties}
      */
-    public void generate() {
-        // 全局配置
-        GlobalConfig gc = initGlobalConfig(codeGeneratorConfig.getAuthor());
-        // 数据源配置
-        DataSourceConfig dsc = initDataSourceConfig();
-        // 包配置
-        PackageConfig pc = initPackageConfig();
-        // 模板引擎配置
-        FreemarkerTemplateEngine templateEngine = new FreemarkerTemplateEngine();
+    public MybatisPlusCodeGenerator(String propertiesFileName) {
+        configuration = new Configuration(propertiesFileName);
+    }
 
+    /**
+     * 生成代码主入口
+     */
+    public void generator() {
         // 代码生成器
         AutoGenerator mpg = new AutoGenerator();
-        mpg.setGlobalConfig(gc);
-        mpg.setDataSource(dsc);
-        mpg.setPackageInfo(pc);
-        mpg.setTemplateEngine(templateEngine);
-        // 自定义配置
-        InjectionConfig cfg = initInjectionConfig();
-        mpg.setCfg(cfg);
-        // 策略配置
-        StrategyConfig strategy = initStrategyConfig(codeGeneratorConfig.getTables(), codeGeneratorConfig.getTablePrefix());
-        mpg.setStrategy(strategy);
-        TemplateConfig tc = initTemplateConfig();
-        mpg.setTemplate(tc);
-        //开始执行
+        String projectPath = System.getProperty("user.dir");
+        String moduleName = configuration.getString("module.name");
+        if(StringUtils.isNotBlank(moduleName)){
+            projectPath = projectPath + StringPool.SLASH + moduleName;
+        }
+        // 全局配置
+        this.setGlobalConfig(mpg, projectPath);
+        // 数据源配置
+        this.setDb(mpg);
+        //设置输出路径
+        this.setOutPath(mpg);
+        // 配置需要生成的文件
+        this.setGenerateFile(mpg, projectPath);
+        //设置策略
+        this.setStrategy(mpg);
+        mpg.setTemplateEngine(new FreemarkerTemplateEngine());
         mpg.execute();
     }
 
-    private PackageConfig initPackageConfig() {
-        return new PackageConfig()
-                .setParent(codeGeneratorConfig.getPackageName())
-                .setController(codeGeneratorConfig.getControllerPath())
-                .setEntity(codeGeneratorConfig.getEntityPath())
-                .setMapper(codeGeneratorConfig.getMapperPath())
-                .setService(codeGeneratorConfig.getServicePath())
-                .setServiceImpl(codeGeneratorConfig.getServiceImplPath())
-                .setXml(codeGeneratorConfig.getMapperXmlPath());
-
-    }
-
 
     /**
-     * 配置数据源
+     * 设置全局配置
      *
-     * @return
+     * @param mpg
      */
-    private DataSourceConfig initDataSourceConfig() {
-        return new DataSourceConfig()
-                .setUrl(codeGeneratorConfig.getUrl())
-                .setDriverName(codeGeneratorConfig.getDriverName())
-                .setUsername(codeGeneratorConfig.getUserName())
-                .setPassword(codeGeneratorConfig.getPassword());
-    }
-
-    /**
-     * 全局配置
-     *
-     * @return
-     */
-    private GlobalConfig initGlobalConfig(String author) {
+    private void setGlobalConfig(AutoGenerator mpg, String projectPath) {
         GlobalConfig gc = new GlobalConfig();
-        basePath = System.getProperty("user.dir");
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getModuleName())) {
-            basePath = basePath + "/" + codeGeneratorConfig.getModuleName();
-        }
-        gc.setOutputDir(basePath + javaHome);
-        gc.setAuthor(author);
+        gc.setOutputDir(projectPath + "/src/main/java");
+        gc.setAuthor(configuration.getString("auth", "Meng.Liu"));
         gc.setOpen(false);
-        gc.setControllerName(codeGeneratorConfig.getControllerName());
-        gc.setEntityName(codeGeneratorConfig.getEntityName());
-        gc.setServiceName(codeGeneratorConfig.getServiceName());
-        gc.setServiceImplName(codeGeneratorConfig.getServiceImplName());
-        gc.setFileOverride(codeGeneratorConfig.isIfOverrideFile());
-        gc.setDateType(codeGeneratorConfig.getDateType());
-        return gc;
+        gc.setEnableCache(configuration.getBoolean("enable.cache", false));
+        gc.setBaseResultMap(true);
+        gc.setBaseColumnList(true);
+        gc.setFileOverride(configuration.getBoolean("file.override", false));
+        setFileName(gc);
+        mpg.setGlobalConfig(gc);
     }
 
     /**
-     * 自定义配置
+     * 设置文件名称  %s会替换为表名
      *
-     * @return
+     * @param gc
      */
-    private InjectionConfig initInjectionConfig() {
+    private void setFileName(GlobalConfig gc) {
+        if (null != configuration.getString("file.name.controller")) {
+            gc.setControllerName(configuration.getString("file.name.controller"));
+        }
+        if (null != configuration.getString("file.name.entity")) {
+            gc.setEntityName(configuration.getString("file.name.entity"));
+        }
+        if (null != configuration.getString("file.name.service")) {
+            gc.setServiceName(configuration.getString("file.name.service"));
+        }
+        if (null != configuration.getString("file.name.service-impl")) {
+            gc.setServiceImplName(configuration.getString("file.name.service-impl"));
+        }
+        if (null != configuration.getString("file.name.mapper")) {
+            gc.setMapperName(configuration.getString("file.name.mapper"));
+        }
+    }
+
+    /**
+     * 设置数据源
+     *
+     * @param mpg
+     */
+    private void setDb(AutoGenerator mpg) {
+        DataSourceConfig dsc = new DataSourceConfig();
+        dsc.setUrl("jdbc:mysql://" + configuration.getString("db.host") + "/" + configuration.getString("db.name") + "?useUnicode=true&useSSL=false&characterEncoding=utf8");
+        dsc.setDriverName(configuration.getString("db.driver", "com.mysql.jdbc.Driver"));
+        dsc.setUsername(configuration.getString("db.username"));
+        dsc.setPassword(configuration.getString("db.password"));
+        mpg.setDataSource(dsc);
+    }
+
+    /**
+     * 设置输出路径
+     *
+     * @param mpg
+     */
+    private void setOutPath(AutoGenerator mpg) {
+        // 包配置
+        PackageConfig pc = new PackageConfig();
+        pc.setParent(configuration.getString("root.package"));
+        pc.setController(configuration.getString("out.path.controller"));
+        pc.setEntity(configuration.getString("out.path.entity"));
+        pc.setService(configuration.getString("out.path.service"));
+        pc.setServiceImpl(configuration.getString("out.path.service-impl"));
+        pc.setMapper(configuration.getString("out.path.mapper"));
+        mpg.setPackageInfo(pc);
+    }
+
+    /**
+     * 设置需要生成的文件
+     *
+     * @param mpg
+     */
+    private void setGenerateFile(AutoGenerator mpg, String projectPath) {
+        TemplateConfig templateConfig = new TemplateConfig();
         InjectionConfig cfg = new InjectionConfig() {
             @Override
             public void initMap() {
+                Map<String, Object> map = this.getMap();
+                if( null == map ){
+                    map = new HashMap<>();
+                }
+                this.setMap(map);
                 // to do nothing
+                String cacheClass = configuration.getString("cache.class");
+                if( StringUtils.isNotBlank(cacheClass) ){
+                    map.put("cacheClass", cacheClass);
+                }
+                Boolean isIdSuper = configuration.getBoolean("super.id");
+                if( StringUtils.isNotBlank(cacheClass) ){
+                    map.put("isIdSuper", isIdSuper);
+                }
             }
-        };
-        List<FileOutConfig> fileOutConfigs = new ArrayList<>(1);
-        if (codeGeneratorConfig.isIfGenerateMapperXml()) {
-            fileOutConfigs.add(this.buildFileOutConfig("/templates/mapper.xml.ftl",
-                    resourceHome,
-                    codeGeneratorConfig.getMapperXmlPath(),
-                    codeGeneratorConfig.getMapperXmlName(),
-                    StringPool.DOT_XML));
-        }
-        cfg.setFileOutConfigList(fileOutConfigs);
-        return cfg;
-    }
 
-    private FileOutConfig buildFileOutConfig(String templateName, String rootPath, String path, String fileTemplateName, String suffix) {
-        if (path.contains(".")) {
-            path = path.replaceAll("\\.", "//");
-        }
-        final String outPath = "/" + path;
-        return new FileOutConfig(templateName) {
             @Override
-            public String outputFile(TableInfo tableInfo) {
-
-                //自定义输入文件名称
-                return basePath + rootPath + outPath + "/" + parseMapperName(fileTemplateName, tableInfo.getEntityName()) + suffix;
+            public Map<String, Object> prepareObjectMap(Map<String, Object> objectMap) {
+                if(!CollectionUtils.isEmpty(this.getMap())){
+                    objectMap.putAll(this.getMap());
+                }
+                return objectMap;
             }
         };
-    }
-
-    private String parseMapperName(String templateName, String entityName) {
-        return String.format(templateName, entityName);
+        mpg.setCfg(cfg);
+        if (!configuration.getBoolean("generate.controller", true)) {
+            templateConfig.setController(null);
+        }
+        if (!configuration.getBoolean("generate.entity", true)) {
+            templateConfig.setEntity(null);
+        }
+        if (!configuration.getBoolean("generate.service", true)) {
+            templateConfig.setService(null);
+        }
+        if (!configuration.getBoolean("generate.service-impl", true)) {
+            templateConfig.setServiceImpl(null);
+        }
+        if (!configuration.getBoolean("generate.mapper", true)) {
+            templateConfig.setMapper(null);
+        }
+        if (configuration.getBoolean("generate.xml", true)) {
+            // 名称的自定义配置无法直接通过packageInfo来修改，必须要自定义
+            List<FileOutConfig> focList = new ArrayList<>();
+            focList.add(new FileOutConfig(XML) {
+                @Override
+                public String outputFile(TableInfo tableInfo) {
+                    return projectPath + configuration.getString("out.path.xml") + tableInfo.getEntityName() + "Mapper" + StringPool.DOT_XML;
+                }
+            });
+            cfg.setFileOutConfigList(focList);
+        }
+        templateConfig.setXml(null);
+        mpg.setTemplate(templateConfig);
     }
 
     /**
-     * 策略配置
-     *
-     * @param tableNames 数据库表名
-     * @return
+     * 设置生成策略
      */
-    private StrategyConfig initStrategyConfig(String[] tableNames, String... tablePrefix) {
+    private void setStrategy(AutoGenerator mpg) {
+        // 策略配置
         StrategyConfig strategy = new StrategyConfig();
         strategy.setNaming(NamingStrategy.underline_to_camel);
         strategy.setColumnNaming(NamingStrategy.underline_to_camel);
+        this.setSuperClass(strategy);
+        String superColumns = configuration.getString("super.columns");
+        if( StringUtils.isNotBlank(superColumns) ){
+            strategy.setSuperEntityColumns(superColumns.split(StringPool.COMMA));
+        }
+        String tables = configuration.getString("db.tables");
+        if( StringUtils.isBlank(tables) ){
+            throw new IllegalStateException("db tables is empty.");
+        }
+        strategy.setInclude(tables.split(StringPool.COMMA));
         strategy.setEntityLombokModel(true);
-        strategy.setTablePrefix(tablePrefix);
-        strategy.setInclude(tableNames);
         strategy.setRestControllerStyle(true);
-        if (null != codeGeneratorConfig.getSuperEntityColumns()) {
-            strategy.setSuperEntityColumns(codeGeneratorConfig.getSuperEntityColumns());
-        }
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getSuperEntityClass())) {
-            strategy.setSuperEntityClass(codeGeneratorConfig.getSuperEntityClass());
-        }
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getSuperControllerClass())) {
-            strategy.setSuperControllerClass(codeGeneratorConfig.getSuperControllerClass());
-        }
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getSuperMapperClass())) {
-            strategy.setSuperMapperClass(codeGeneratorConfig.getSuperMapperClass());
-        }
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getSuperServiceClass())) {
-            strategy.setSuperServiceClass(codeGeneratorConfig.getSuperServiceClass());
-        }
-        if (StringUtils.isNotBlank(codeGeneratorConfig.getSuperServiceImplClass())) {
-            strategy.setSuperServiceImplClass(codeGeneratorConfig.getSuperServiceImplClass());
-        }
-        return strategy;
+        strategy.setControllerMappingHyphenStyle(true);
+        strategy.setEntityTableFieldAnnotationEnable(true);
+        strategy.setTablePrefix(mpg.getPackageInfo().getModuleName() + "_");
+        mpg.setStrategy(strategy);
     }
 
     /**
-     * 覆盖Entity以及xml
+     * 设置父类
      *
-     * @return
+     * @param strategy
      */
-    private TemplateConfig initTemplateConfig() {
-        TemplateConfig tc = new TemplateConfig();
-        tc.setEntityKt(null);
-        //不使用默认的xml生成方式，默认生成到了mapper同级目录下
-        tc.setXml(null);
-        if (!codeGeneratorConfig.isIfGenerateController()) {
-            tc.setController(null);
+    private void setSuperClass(StrategyConfig strategy) {
+        if (null != configuration.getString("super.class.controller")) {
+            strategy.setSuperControllerClass(configuration.getString("super.class.controller"));
         }
-        if (!codeGeneratorConfig.isIfGenerateService()) {
-            tc.setService(null);
+        if (null != configuration.getString("super.class.entity")) {
+            strategy.setSuperEntityClass(configuration.getString("super.class.entity"));
         }
-        if (!codeGeneratorConfig.isIfGenerateServiceImpl()) {
-            tc.setServiceImpl(null);
+        if (null != configuration.getString("super.class.service")) {
+            strategy.setSuperServiceClass(configuration.getString("super.class.service"));
         }
-        if (!codeGeneratorConfig.isIfGenerateMapper()) {
-            tc.setMapper(null);
+        if (null != configuration.getString("super.class.service-impl")) {
+            strategy.setSuperServiceImplClass(configuration.getString("super.class.service-impl"));
         }
-        if (!codeGeneratorConfig.isIfGenerateEntity()) {
-            tc.setEntity(null);
+        if (null != configuration.getString("super.class.mapper")) {
+            strategy.setSuperMapperClass(configuration.getString("super.class.mapper"));
         }
-        return tc;
     }
 }

@@ -33,6 +33,8 @@
         <module>rocketmq-module</module>
         <module>reflect-module</module>
         <module>mysql-module</module>
+        <module>mybatis-code-generator-module</module>
+        <module>restful-version-module</module>
     </modules>
 
     <dependencies>
@@ -92,6 +94,7 @@
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
             <plugin>
