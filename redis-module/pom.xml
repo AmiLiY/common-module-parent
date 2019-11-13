@@ -19,7 +19,7 @@
     </parent>
 
     <properties>
-        <jackson-databind.version>2.9.5</jackson-databind.version>
+        <jackson-databind.version>2.9.10.1</jackson-databind.version>
         <redisson.version>3.7.5</redisson.version>
     </properties>
 
